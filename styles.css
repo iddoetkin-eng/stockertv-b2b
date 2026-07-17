@@ -3,6 +3,29 @@
    Cream editorial palette, serif display, single teal accent
    ============================================================ */
 
+/* self-hosted fonts (latin subsets, OFL-licensed) */
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/fonts/instrument-serif-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/fonts/instrument-serif-latin-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("assets/fonts/instrument-sans-latin.woff2") format("woff2");
+}
+
 :root {
   --bg: #FAF9F5;
   --bg-alt: #F2F0E9;
@@ -311,7 +334,22 @@ h3 { font-size: 1.5rem; line-height: 1.2; }
 
 .product-grid { display: grid; gap: 56px; align-items: center; }
 
-.phone-col { display: flex; justify-content: center; }
+.phone-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sample-note {
+  margin-top: 18px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: center;
+}
 
 .phone {
   width: min(310px, 80vw);
@@ -588,6 +626,28 @@ h3 { font-size: 1.5rem; line-height: 1.2; }
 .reporter-list li span:not(.rep-dot) { color: var(--ink-2); font-size: 0.9375rem; }
 .product-copy .fine { margin-top: 28px; }
 
+/* ---------- explainer video ---------- */
+
+.section-slim { padding: 72px 0; }
+
+.video-card {
+  max-width: 880px;
+  margin: 0 auto;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--dark-bg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+}
+.video-card video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--dark-bg);
+}
+
+#explainer .fine.center { margin-top: 18px; }
+
 /* ---------- widget demo ---------- */
 
 .demo-shell {
@@ -657,11 +717,23 @@ h3 { font-size: 1.5rem; line-height: 1.2; }
 
 .w-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
   gap: 12px;
   margin-bottom: 18px;
   flex-wrap: wrap;
+}
+.w-brand { margin-left: auto; }
+
+.w-sample {
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--w-sub);
+  border: 1px solid var(--w-border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  transition: color 0.35s ease, border-color 0.35s ease;
 }
 .w-title { font-weight: 600; font-size: 1.0625rem; color: var(--w-text); transition: color 0.35s ease; }
 .w-brand { font-size: 0.75rem; color: var(--w-sub); letter-spacing: 0.02em; transition: color 0.35s ease; }

@@ -1,8 +1,19 @@
 /* StockerTV B2B — interactions */
+
+/* Contact address — change this one line and every contact link on the page updates. */
+var EMAIL = "iddo.etkin@gmail.com";
+
 (function () {
   "use strict";
 
   var doc = document.documentElement;
+
+  /* wire all contact links to the EMAIL constant */
+  document.querySelectorAll("a[data-mailto]").forEach(function (a) {
+    var subject = a.getAttribute("data-mailto");
+    a.href = "mailto:" + EMAIL + (subject ? "?subject=" + encodeURIComponent(subject) : "");
+    if (a.hasAttribute("data-mailto-text")) a.textContent = EMAIL;
+  });
   doc.classList.remove("no-js");
   if (new URLSearchParams(location.search).has("noanim")) {
     doc.classList.add("no-anim");
