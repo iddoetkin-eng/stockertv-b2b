@@ -40,6 +40,15 @@ var EMAIL = "iddo.etkin@gmail.com";
   };
   var gpuOk = webglAvailable();
 
+  /* ---------- shared: exchanges data (globe + Markets tab) ---------- */
+  var exchangesPromise = null;
+  var getExchanges = function () {
+    if (!exchangesPromise) {
+      exchangesPromise = fetch("assets/exchanges.json").then(function (r) { return r.json(); });
+    }
+    return exchangesPromise;
+  };
+
   /* ---------- sticky nav border ---------- */
   var nav = document.querySelector(".nav");
   var onScroll = function () {
@@ -67,18 +76,15 @@ var EMAIL = "iddo.etkin@gmail.com";
   /* ---------- hero waveform band (seamless loop, sum of sines) ---------- */
   var waveSvg = document.getElementById("wave-svg");
   if (waveSvg) {
-    var W = 1600; // one tile width, matches CSS keyframe distance
+    var W = 1600;
     var H = 220;
     waveSvg.setAttribute("viewBox", "0 0 " + W * 2 + " " + H);
-
     var wave = function (x, amp, mid) {
-      // periods all divide W so the tile loops seamlessly
       return mid +
         amp * Math.sin((x / W) * Math.PI * 6) +
         amp * 0.45 * Math.sin((x / W) * Math.PI * 14 + 1.4) +
         amp * 0.22 * Math.sin((x / W) * Math.PI * 22 + 0.6);
     };
-
     var buildPath = function (amp, mid, step) {
       var d = "M0," + wave(0, amp, mid).toFixed(1);
       for (var x = step; x <= W * 2; x += step) {
@@ -86,7 +92,6 @@ var EMAIL = "iddo.etkin@gmail.com";
       }
       return d;
     };
-
     var mkPath = function (cls, d, opacity, width) {
       var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
       p.setAttribute("d", d);
@@ -98,44 +103,74 @@ var EMAIL = "iddo.etkin@gmail.com";
       p.setAttribute("vector-effect", "non-scaling-stroke");
       waveSvg.appendChild(p);
     };
-
     mkPath("wave-a", buildPath(34, H * 0.52, 4), "0.5", "1.6");
     mkPath("wave-b", buildPath(50, H * 0.5, 4), "0.16", "1.2");
   }
 
-  /* ---------- hero particle field (raw WebGL, silver on black) ---------- */
+  /* ============================================================
+     hero particle universe — morphs waveform → globe → wordmark
+     raw WebGL points; desktop ~110k, mobile ~30k
+     ============================================================ */
   var initHeroFx = function () {
     var canvas = document.getElementById("hero-fx");
     var hero = document.getElementById("hero");
-    if (!canvas || !hero || noAnim || reducedMotion || !gpuOk) return; // static glow stays
-    var gl = canvas.getContext("webgl", { alpha: true, antialias: false, powerPreference: "low-power" });
+    if (!canvas || !hero || noAnim || reducedMotion || !gpuOk) return; // static glow + wave band remain
+    var gl = canvas.getContext("webgl", { alpha: true, antialias: false, powerPreference: "high-performance" });
     if (!gl) return;
 
+    var isMobile = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 720;
+    var N = isMobile ? 30000 : 110000;
+    var dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 1.5);
+
     var VS =
-      "attribute vec2 aPos;\n" +
-      "uniform float uT;\n" +
-      "uniform float uDpr;\n" +
-      "varying float vA;\n" +
+      "attribute vec3 aA;\n" +
+      "attribute vec3 aB;\n" +
+      "attribute vec3 aC;\n" +
+      "attribute float aSeed;\n" +
+      "uniform float uT, uIA, uScaleB, uScaleC, uRotY, uScroll, uMouseF, uDpr, uPx;\n" +
+      "uniform vec3 uW;\n" +
+      "uniform vec2 uMouse;\n" +
+      "varying float vL;\n" +
       "void main() {\n" +
-      "  float x = aPos.x;\n" +
-      "  float r = aPos.y;\n" +
-      "  float ph = r * 6.2831;\n" +
-      "  float w = sin(x * 3.6 + uT * 0.42 + ph) * 0.5\n" +
-      "          + sin(x * 7.3 - uT * 0.30 + ph * 2.0) * 0.24\n" +
-      "          + sin(x * 13.0 + uT * 0.20 + ph * 3.0) * 0.12;\n" +
-      "  float yBase = mix(-0.78, 0.78, r);\n" +
-      "  gl_Position = vec4(x, yBase + w * 0.22, 0.0, 1.0);\n" +
-      "  float centerFade = 1.0 - abs(yBase) * 0.8;\n" +
-      "  vA = (0.06 + 0.19 * max(0.0, w + 0.35)) * centerFade;\n" +
-      "  gl_PointSize = (1.2 + 1.7 * centerFade) * uDpr;\n" +
+      "  vec3 pA = aA;\n" +
+      "  float wv = sin(pA.x * 3.4 + uT * 0.60 + pA.z * 3.0) * 0.50\n" +
+      "           + sin(pA.x * 6.8 - uT * 0.42 + pA.z * 5.2) * 0.26\n" +
+      "           + sin(pA.x * 12.0 + uT * 0.30 + pA.z * 8.4) * 0.13;\n" +
+      "  pA.y += wv * 0.34;\n" +
+      "  vec3 pB = aB;\n" +
+      "  float cr = cos(uRotY), sr = sin(uRotY);\n" +
+      "  pB = vec3(pB.x * cr + pB.z * sr, pB.y, -pB.x * sr + pB.z * cr) * uScaleB;\n" +
+      "  vec3 pC = aC * uScaleC;\n" +
+      "  pC.y -= 0.56;\n" +
+      "  pC.xy += vec2(sin(uT * 0.7 + aSeed * 6.28), cos(uT * 0.55 + aSeed * 6.28)) * 0.004;\n" +
+      "  vec2 c = pA.xy * uW.x + vec2(pB.x * uIA, pB.y) * uW.y + vec2(pC.x * uIA, pC.y) * uW.z;\n" +
+      "  float z = pA.z * uW.x + pB.z * uW.y + pC.z * uW.z;\n" +
+      "  float focus = max(max(uW.x, uW.y), uW.z);\n" +
+      "  float scat = 1.0 - focus;\n" +
+      "  c += vec2(sin(aSeed * 81.0 + uT * 1.6), cos(aSeed * 47.0 + uT * 1.2)) * scat * 0.34;\n" +
+      "  z += sin(aSeed * 23.0 - uT * 1.4) * scat * 0.3;\n" +
+      "  float per = 1.0 / (1.0 + z * 0.45);\n" +
+      "  c *= per;\n" +
+      "  c.y += uScroll * z * 0.55;\n" +
+      "  vec2 dm = c - uMouse;\n" +
+      "  float d2 = dot(dm, dm) + 0.012;\n" +
+      "  float f = min(uMouseF * 0.030 / d2, 0.28);\n" +
+      "  c += (dm / sqrt(d2)) * f;\n" +
+      "  gl_Position = vec4(c, 0.0, 1.0);\n" +
+      "  gl_PointSize = (0.9 + 1.3 * fract(aSeed * 7.13)) * per * uPx * uDpr;\n" +
+      "  float lum = 0.075 + 0.8 * pow(fract(aSeed * 3.77), 3.0);\n" +
+      "  lum *= (0.55 + 0.45 * per);\n" +
+      "  lum *= 1.0 + max(0.0, wv) * 0.9 * uW.x;\n" +
+      "  lum *= dot(uW, vec3(1.0, 1.0, 0.55)) + scat * 1.1;\n" +
+      "  vL = lum;\n" +
       "}";
     var FS =
       "precision mediump float;\n" +
-      "varying float vA;\n" +
+      "varying float vL;\n" +
       "void main() {\n" +
       "  vec2 d = gl_PointCoord - vec2(0.5);\n" +
-      "  float m = smoothstep(0.5, 0.15, length(d));\n" +
-      "  gl_FragColor = vec4(0.87, 0.87, 0.87, 1.0) * (vA * m);\n" +
+      "  float m = smoothstep(0.5, 0.12, length(d));\n" +
+      "  gl_FragColor = vec4(0.92, 0.92, 0.94, 1.0) * (vL * m);\n" +
       "}";
 
     var mkShader = function (type, src) {
@@ -144,72 +179,199 @@ var EMAIL = "iddo.etkin@gmail.com";
       gl.compileShader(s);
       return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
     };
-    var vs = mkShader(gl.VERTEX_SHADER, VS);
-    var fs = mkShader(gl.FRAGMENT_SHADER, FS);
-    if (!vs || !fs) return;
-    var prog = gl.createProgram();
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return;
-    gl.useProgram(prog);
 
-    var COLS = 240, ROWS = 42;
-    var pts = new Float32Array(COLS * ROWS * 2);
-    var i = 0;
-    for (var ry = 0; ry < ROWS; ry++) {
-      for (var cx = 0; cx < COLS; cx++) {
-        // deterministic jitter keeps the grid organic without Math.random
-        var jx = ((cx * 7919 + ry * 104729) % 1000) / 1000 - 0.5;
-        var jy = ((cx * 12007 + ry * 31337) % 1000) / 1000 - 0.5;
-        pts[i++] = -1 + (2 * (cx + 0.5 + jx * 0.9)) / COLS;
-        pts[i++] = (ry + 0.5 + jy * 0.8) / ROWS;
+    /* init is chunked into short phases so no single long task forms
+       (protects TBT on throttled mobile CPUs) */
+    var prog, A, B, C, seeds;
+    var phases = [];
+    var runPhases = function (i) {
+      if (i >= phases.length) return;
+      phases[i]();
+      setTimeout(function () { runPhases(i + 1); }, 24);
+    };
+
+    phases.push(function () {
+      var vs = mkShader(gl.VERTEX_SHADER, VS);
+      var fs = mkShader(gl.FRAGMENT_SHADER, FS);
+      if (!vs || !fs) { phases.length = 0; return; }
+      prog = gl.createProgram();
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { phases.length = 0; return; }
+      gl.useProgram(prog);
+    });
+
+    phases.push(function () {
+      /* shape A: waveform field (clip units; wave motion added in shader) */
+      A = new Float32Array(N * 3);
+      seeds = new Float32Array(N);
+      for (var i = 0; i < N; i++) {
+        A[i * 3] = (Math.random() * 2 - 1) * 1.12;
+        A[i * 3 + 1] = (Math.random() * 2 - 1) * 0.07;
+        A[i * 3 + 2] = Math.random() * 1.2 - 0.6;
+        seeds[i] = Math.random();
       }
-    }
-    var buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, pts, gl.STATIC_DRAW);
-    var loc = gl.getAttribLocation(prog, "aPos");
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    var uT = gl.getUniformLocation(prog, "uT");
-    var uDpr = gl.getUniformLocation(prog, "uDpr");
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE);
-    gl.clearColor(0, 0, 0, 0);
+    });
 
-    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    phases.push(function () {
+      /* shape B: fibonacci sphere (square units) */
+      B = new Float32Array(N * 3);
+      var GA = Math.PI * (3 - Math.sqrt(5));
+      for (var i = 0; i < N; i++) {
+        var yy = 1 - (i / (N - 1)) * 2;
+        var rr = Math.sqrt(Math.max(0, 1 - yy * yy));
+        var th = GA * i;
+        B[i * 3] = Math.cos(th) * rr * 0.74;
+        B[i * 3 + 1] = yy * 0.74;
+        B[i * 3 + 2] = Math.sin(th) * rr * 0.74;
+      }
+    });
+
+    phases.push(function () {
+      /* shape C: the wordmark, sampled from rasterized text (square units) */
+      C = new Float32Array(N * 3);
+      var tc = document.createElement("canvas");
+      tc.width = 900; tc.height = 225;
+      var ctx = tc.getContext("2d", { willReadFrequently: true });
+      ctx.fillStyle = "#fff";
+      ctx.font = '158px "Instrument Serif", Georgia, serif';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("StockerTV", 450, 118);
+      var img = ctx.getImageData(0, 0, 900, 225).data;
+      var px = [];
+      for (var y = 0; y < 225; y += 2) {
+        for (var x = 0; x < 900; x += 2) {
+          if (img[(y * 900 + x) * 4 + 3] > 128) px.push(x, y);
+        }
+      }
+      if (!px.length) px = [450, 112];
+      var HW = 0.82;
+      for (var k = 0; k < N; k++) {
+        var pi = (Math.floor(Math.random() * (px.length / 2))) * 2;
+        C[k * 3] = ((px[pi] + Math.random() * 2) / 900 - 0.5) * 2 * HW;
+        C[k * 3 + 1] = (0.5 - (px[pi + 1] + Math.random() * 2) / 225) * 2 * HW * 0.25;
+        C[k * 3 + 2] = (Math.random() - 0.5) * 0.14;
+      }
+    });
+
+    phases.push(function () {
+      var bindAttr = function (name, data, comps) {
+        var b = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, b);
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        var l = gl.getAttribLocation(prog, name);
+        gl.enableVertexAttribArray(l);
+        gl.vertexAttribPointer(l, comps, gl.FLOAT, false, 0, 0);
+      };
+      bindAttr("aA", A, 3);
+      bindAttr("aB", B, 3);
+      bindAttr("aC", C, 3);
+      bindAttr("aSeed", seeds, 1);
+      ["uT", "uIA", "uScaleB", "uScaleC", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse"]
+        .forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE);
+      gl.clearColor(0, 0, 0, 0);
+      startFx();
+    });
+
+    var U = {};
+    var startFx = function () {
+    var IA = 1;
     var resize = function () {
       var r = hero.getBoundingClientRect();
       canvas.width = Math.round(r.width * dpr);
       canvas.height = Math.round(r.height * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
+      IA = r.height / r.width;
+      gl.uniform1f(U.uIA, IA);
+      gl.uniform1f(U.uScaleB, Math.min(1, 0.85 / (0.74 * IA)));
+      gl.uniform1f(U.uScaleC, Math.min(1, 0.95 / (0.82 * IA)));
     };
     resize();
     window.addEventListener("resize", resize);
+    gl.uniform1f(U.uDpr, dpr);
+    gl.uniform1f(U.uPx, isMobile ? 2.0 : 1.8);
 
-    var born = performance.now();
+    /* morph timeline: waveform → globe → wordmark */
+    var HOLD = 6.5, MORPH = 2.6, SEG = HOLD + MORPH;
+    var weights = function (t) {
+      var ct = t % (SEG * 3);
+      var seg = Math.floor(ct / SEG);
+      var lt = ct - seg * SEG;
+      var w = [0, 0, 0];
+      if (lt < HOLD) {
+        w[seg] = 1;
+      } else {
+        var m = (lt - HOLD) / MORPH;
+        var e = 0.5 - 0.5 * Math.cos(m * Math.PI);
+        w[seg] = 1 - e;
+        w[(seg + 1) % 3] = e;
+      }
+      return w;
+    };
+
+    /* mouse */
+    var mx = 0, my = 0, tmx = 0, tmy = 0, mForce = 0, lastMove = -1e4;
+    window.addEventListener("pointermove", function (e) {
+      if (e.pointerType !== "mouse") return;
+      var r = canvas.getBoundingClientRect();
+      if (e.clientY < r.top || e.clientY > r.bottom) return;
+      tmx = ((e.clientX - r.left) / r.width) * 2 - 1;
+      tmy = -(((e.clientY - r.top) / r.height) * 2 - 1);
+      lastMove = performance.now();
+    }, { passive: true });
+
+    /* ?fxt=N jumps the morph clock N seconds in — used for visual testing */
+    var fxt = parseFloat(new URLSearchParams(location.search).get("fxt")) || 0;
+    var born = performance.now() - fxt * 1000;
     var running = false;
     var heroVisible = true;
+    var frames = 0, slowFrames = 0, lastT = 0, drawN = N, dead = false;
     var scrollFade = function () {
       return Math.max(0, 1 - window.scrollY / (hero.offsetHeight * 0.85));
     };
     var frame = function (now) {
-      var op = Math.min(1, (now - born) / 1400) * scrollFade();
+      if (dead) { running = false; return; }
+      var op = Math.min(1, (now - born) / 1600) * scrollFade();
       canvas.style.opacity = op.toFixed(3);
       if (!heroVisible || document.hidden || op <= 0.005) {
         running = false;
         return;
       }
+      /* adaptive quality: shed load if the device can't keep up */
+      if (lastT) {
+        var dt = now - lastT;
+        if (dt > 34 && ++slowFrames > 40) {
+          if (drawN > N * 0.35) { drawN = Math.floor(N * 0.35); slowFrames = 0; }
+          else { dead = true; canvas.style.opacity = "0"; running = false; return; }
+        }
+      }
+      lastT = now;
+      frames++;
+
+      var t = (now - born) / 1000;
+      var w = weights(t);
+      mForce += (((performance.now() - lastMove < 2600) ? 1 : 0) - mForce) * 0.05;
+      mx += (tmx - mx) * 0.08;
+      my += (tmy - my) * 0.08;
+
       gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.uniform1f(uT, now / 1000);
-      gl.uniform1f(uDpr, dpr);
-      gl.drawArrays(gl.POINTS, 0, COLS * ROWS);
+      gl.uniform1f(U.uT, t);
+      gl.uniform3f(U.uW, w[0], w[1], w[2]);
+      gl.uniform1f(U.uRotY, t * 0.22);
+      gl.uniform1f(U.uScroll, Math.min(1, window.scrollY / Math.max(1, hero.offsetHeight)) * 1.2);
+      gl.uniform2f(U.uMouse, mx, my);
+      gl.uniform1f(U.uMouseF, mForce);
+      gl.drawArrays(gl.POINTS, 0, drawN);
       requestAnimationFrame(frame);
     };
     var ensure = function () {
-      if (!running && heroVisible && !document.hidden && scrollFade() > 0.005) {
+      if (!running && !dead && heroVisible && !document.hidden && scrollFade() > 0.005) {
         running = true;
+        lastT = 0;
         requestAnimationFrame(frame);
       }
     };
@@ -220,11 +382,26 @@ var EMAIL = "iddo.etkin@gmail.com";
     document.addEventListener("visibilitychange", ensure);
     window.addEventListener("scroll", ensure, { passive: true });
     ensure();
+    };
+
+    runPhases(0);
+  };
+  var scheduleHeroFx = function () {
+    var kick = function () {
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(initHeroFx);
+      } else {
+        initHeroFx();
+      }
+    };
+    /* start after the page has settled: shader compilation is one
+       unavoidable long-ish task, so keep it clear of the load window */
+    setTimeout(kick, Math.max(700, 5200 - performance.now()));
   };
   if (document.readyState === "complete") {
-    setTimeout(initHeroFx, 250);
+    scheduleHeroFx();
   } else {
-    window.addEventListener("load", function () { setTimeout(initHeroFx, 250); });
+    window.addEventListener("load", scheduleHeroFx);
   }
 
   /* ---------- lazy video posters (keep them off the critical path) ---------- */
@@ -246,31 +423,48 @@ var EMAIL = "iddo.etkin@gmail.com";
     lazyVids.forEach(setPoster);
   }
 
-  /* ---------- phone: real video feed ---------- */
+  /* ---------- phone app: feed / search / markets / profile ---------- */
+  var app = document.getElementById("app");
+  var appView = "feed";
   var feed = document.getElementById("phone-feed");
-  if (feed) {
-    var vids = [].slice.call(feed.querySelectorAll("video"));
-    var soundBtn = document.getElementById("feed-sound");
-    var soundOn = false;
-    var phoneVisible = false;
-    var activeVid = vids[0];
+  var vids = feed ? [].slice.call(feed.querySelectorAll("video")) : [];
+  var soundOn = false;
+  var phoneVisible = false;
+  var activeVid = vids[0];
+  var briefVideo = null;
 
+  var syncPlayback = function () {
+    vids.forEach(function (v) {
+      if (phoneVisible && appView === "feed" && v === activeVid && !reducedMotion && !noAnim && !document.hidden) {
+        var p = v.play();
+        if (p && p.catch) p.catch(function () {});
+      } else if (!v.paused) {
+        v.pause();
+      }
+    });
+    if (briefVideo) {
+      if (phoneVisible && appView === "search" && !document.hidden && !reducedMotion && !noAnim) {
+        var bp = briefVideo.play();
+        if (bp && bp.catch) bp.catch(function () {});
+      } else if (!briefVideo.paused) {
+        briefVideo.pause();
+      }
+    }
+  };
+
+  if (feed) {
+    var soundBtn = document.getElementById("feed-sound");
     var applySound = function () {
       vids.forEach(function (v) { v.muted = !soundOn; });
+      if (briefVideo) briefVideo.muted = !soundOn;
       soundBtn.classList.toggle("is-on", soundOn);
       soundBtn.textContent = soundOn ? "Sound on" : "Tap for sound";
       soundBtn.setAttribute("aria-pressed", String(soundOn));
     };
-
-    var syncPlayback = function () {
-      vids.forEach(function (v) {
-        if (phoneVisible && v === activeVid && !reducedMotion && !noAnim && !document.hidden) {
-          var p = v.play();
-          if (p && p.catch) p.catch(function () {});
-        } else if (!v.paused) {
-          v.pause();
-        }
-      });
+    var toggleSound = function () {
+      soundOn = !soundOn;
+      applySound();
+      syncPlayback();
     };
 
     if ("IntersectionObserver" in window) {
@@ -294,11 +488,6 @@ var EMAIL = "iddo.etkin@gmail.com";
     }
     document.addEventListener("visibilitychange", syncPlayback);
 
-    var toggleSound = function () {
-      soundOn = !soundOn;
-      applySound();
-      syncPlayback();
-    };
     soundBtn.addEventListener("click", toggleSound);
     vids.forEach(function (v) {
       v.addEventListener("click", function () {
@@ -313,6 +502,149 @@ var EMAIL = "iddo.etkin@gmail.com";
         }
       });
     });
+  }
+
+  if (app) {
+    var views = app.querySelectorAll(".app-view");
+    var tabs = app.querySelectorAll(".app-tab");
+    var brief = document.getElementById("app-brief");
+    var briefHead = document.getElementById("app-brief-head");
+    var briefMedia = document.getElementById("app-brief-media");
+    var mktsRendered = false;
+
+    var COMPANIES = [
+      { t: "NVDA", n: "Nvidia", x: "NYSE / NASDAQ", v: "nvda" },
+      { t: "AAPL", n: "Apple", x: "NYSE / NASDAQ" },
+      { t: "MSFT", n: "Microsoft", x: "NYSE / NASDAQ" },
+      { t: "TSLA", n: "Tesla", x: "NYSE / NASDAQ" },
+      { t: "AMZN", n: "Amazon", x: "NYSE / NASDAQ" },
+      { t: "META", n: "Meta Platforms", x: "NYSE / NASDAQ" },
+      { t: "GOOGL", n: "Alphabet", x: "NYSE / NASDAQ" },
+      { t: "SAP", n: "SAP SE", x: "Frankfurt", v: "de" },
+      { t: "SAN", n: "Banco Santander", x: "Madrid", v: "es" },
+      { t: "NEM", n: "Newmont", x: "NYSE / NASDAQ", v: "gld" },
+      { t: "TSM", n: "TSMC", x: "Taiwan" },
+      { t: "BA", n: "Boeing", x: "NYSE / NASDAQ" }
+    ];
+
+    var closeBrief = function () {
+      if (briefVideo) { briefVideo.pause(); briefVideo = null; }
+      briefMedia.innerHTML = "";
+      brief.hidden = true;
+    };
+
+    var openBrief = function (c) {
+      briefHead.innerHTML = "";
+      var chip = document.createElement("span");
+      chip.className = "app-tkr";
+      chip.textContent = c.t;
+      var nm = document.createElement("strong");
+      nm.textContent = c.n;
+      var ex = document.createElement("span");
+      ex.textContent = c.x + " · latest brief";
+      briefHead.appendChild(chip);
+      briefHead.appendChild(nm);
+      briefHead.appendChild(ex);
+      briefMedia.innerHTML = "";
+      if (c.v) {
+        briefVideo = document.createElement("video");
+        briefVideo.src = "assets/feed/feed-" + c.v + ".mp4";
+        briefVideo.poster = "assets/feed/feed-" + c.v + "-poster.jpg";
+        briefVideo.muted = !soundOn;
+        briefVideo.loop = true;
+        briefVideo.playsInline = true;
+        briefVideo.setAttribute("playsinline", "");
+        briefVideo.setAttribute("aria-label", "StockerTV brief for " + c.n);
+        briefMedia.appendChild(briefVideo);
+      } else {
+        briefVideo = null;
+        var ph = document.createElement("div");
+        ph.className = "app-brief-placeholder";
+        ph.innerHTML =
+          '<svg width="46" height="46" viewBox="0 0 46 46" fill="none" aria-hidden="true">' +
+          '<circle cx="23" cy="23" r="21" stroke="#4a4a4a" stroke-width="1.5"/>' +
+          '<path d="M18.5 15.5 L31 23 L18.5 30.5 Z" fill="#dedede"/></svg>';
+        var pp = document.createElement("p");
+        pp.textContent = "Briefs for " + c.t + " render continuously in the live product. This demo includes four sample videos.";
+        ph.appendChild(pp);
+        briefMedia.appendChild(ph);
+      }
+      brief.hidden = false;
+      syncPlayback();
+    };
+
+    var setView = function (name) {
+      appView = name;
+      views.forEach(function (v) { v.classList.toggle("is-active", v.dataset.view === name); });
+      tabs.forEach(function (t) {
+        var on = t.dataset.tab === name;
+        t.classList.toggle("is-active", on);
+        t.setAttribute("aria-pressed", String(on));
+      });
+      if (name === "markets" && !mktsRendered) {
+        mktsRendered = true;
+        getExchanges().then(function (d) {
+          var ul = document.getElementById("app-mkts");
+          d.exchanges.slice(0, 10).forEach(function (e) {
+            var li = document.createElement("li");
+            var nm = document.createElement("span");
+            nm.className = "app-nm";
+            nm.textContent = e.name;
+            var val = document.createElement("span");
+            val.className = "app-val";
+            val.textContent = e.companies.toLocaleString("en-US");
+            li.appendChild(nm);
+            li.appendChild(val);
+            ul.appendChild(li);
+          });
+          var more = document.createElement("li");
+          more.className = "app-more";
+          more.textContent = "+ " + (d.exchanges.length - 10) + " more exchanges";
+          ul.appendChild(more);
+        }).catch(function () {});
+      }
+      if (name !== "search") closeBrief();
+      syncPlayback();
+    };
+    tabs.forEach(function (t) {
+      t.addEventListener("click", function () { setView(t.dataset.tab); });
+    });
+
+    /* search list */
+    var resultsUl = document.getElementById("app-results");
+    var emptyMsg = document.getElementById("app-empty");
+    var rows = COMPANIES.map(function (c) {
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button";
+      var chip = document.createElement("span");
+      chip.className = "app-tkr";
+      chip.textContent = c.t;
+      var nm = document.createElement("span");
+      nm.className = "app-nm";
+      nm.textContent = c.n;
+      var ex = document.createElement("span");
+      ex.className = "app-ex";
+      ex.textContent = c.x;
+      b.appendChild(chip);
+      b.appendChild(nm);
+      b.appendChild(ex);
+      b.addEventListener("click", function () { openBrief(c); });
+      li.appendChild(b);
+      resultsUl.appendChild(li);
+      return { li: li, c: c };
+    });
+    document.getElementById("app-search-input").addEventListener("input", function () {
+      var q = this.value.trim().toLowerCase();
+      var shown = 0;
+      rows.forEach(function (r) {
+        var hit = !q || r.c.t.toLowerCase().indexOf(q) === 0 || r.c.n.toLowerCase().indexOf(q) !== -1;
+        r.li.style.display = hit ? "" : "none";
+        if (hit) shown++;
+      });
+      emptyMsg.hidden = shown > 0;
+    });
+    document.getElementById("app-back").addEventListener("click", closeBrief);
   }
 
   /* ---------- widget theme toggle ---------- */
@@ -344,10 +676,11 @@ var EMAIL = "iddo.etkin@gmail.com";
     pipe.classList.add("is-drawn");
   }
 
-  /* ---------- globe: 53 exchanges, real counts, tooltips ---------- */
+  /* ---------- globe: 53 exchanges, glowing DOM markers, tooltips ---------- */
   var globeWrap = document.getElementById("globe-wrap");
   var canvas = document.getElementById("globe-canvas");
   var tip = document.getElementById("globe-tip");
+  var markersLayer = document.getElementById("globe-markers");
   var THETA = 0.22;
   var K = 0.39; // sphere radius as a fraction of canvas css size (calibrated against cobe)
 
@@ -355,7 +688,6 @@ var EMAIL = "iddo.etkin@gmail.com";
     globeWrap.classList.add("no-webgl");
   };
 
-  // marker position in canvas css px for the current rotation; null if on the far side
   var projectMarker = function (lat, lng, phiVal, size) {
     var la = lat * Math.PI / 180, lo = lng * Math.PI / 180;
     var x = Math.cos(la) * Math.cos(lo + phiVal);
@@ -364,7 +696,7 @@ var EMAIL = "iddo.etkin@gmail.com";
     var y2 = y * Math.cos(THETA) - z * Math.sin(THETA);
     var z2 = y * Math.sin(THETA) + z * Math.cos(THETA);
     if (z2 <= 0.08) return null;
-    return { x: size / 2 + x * size * K, y: size / 2 - y2 * size * K };
+    return { x: size / 2 + x * size * K, y: size / 2 - y2 * size * K, depth: z2 };
   };
 
   var initGlobe = function (exchanges) {
@@ -373,17 +705,80 @@ var EMAIL = "iddo.etkin@gmail.com";
         var createGlobe = mod.default;
         var size = globeWrap.getBoundingClientRect().width;
         var dpr = Math.min(window.devicePixelRatio || 1, 2);
-
         var maxCount = exchanges.reduce(function (m, e) { return Math.max(m, e.companies); }, 1);
-        var phi = 4.6; // start over the Atlantic
+
+        var phi = 4.6;
         var pointerDown = null;
-        var pointerStart = null;
         var pointerPhi = 0;
         var velocity = 0;
         var visible = true;
         var renderedPhi = phi;
         var activeEx = -1;
-        var baseSpeed = reducedMotion ? 0 : 0.0028;
+        var baseSpeed = reducedMotion ? 0 : 0.0024;
+
+        var cssSize = function () { return globeWrap.getBoundingClientRect().width; };
+
+        var positionTip = function () {
+          var e = exchanges[activeEx];
+          var p = projectMarker(e.lat, e.lng, renderedPhi, cssSize());
+          if (!p) { hideTip(); return; }
+          tip.style.left = p.x + "px";
+          tip.style.top = p.y + "px";
+        };
+
+        var showTip = function (idx) {
+          activeEx = idx;
+          var e = exchanges[idx];
+          tip.innerHTML = "<strong></strong>";
+          tip.querySelector("strong").textContent = e.name;
+          tip.appendChild(document.createTextNode(
+            e.companies.toLocaleString("en-US") + " companies monitored"));
+          tip.hidden = false;
+          positionTip();
+        };
+
+        var hideTip = function () {
+          activeEx = -1;
+          tip.hidden = true;
+        };
+
+        /* glowing DOM markers with generous hit areas */
+        var markerEls = exchanges.map(function (e, i) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "gm" + (i < 5 ? " gm-pulse" : "");
+          b.style.setProperty("--s", (9 + 19 * Math.sqrt(e.companies / maxCount)).toFixed(1) + "px");
+          b.setAttribute("aria-label", e.name + ": " + e.companies.toLocaleString("en-US") + " companies monitored");
+          b.dataset.front = "0";
+          var dot = document.createElement("i");
+          b.appendChild(dot);
+          b.addEventListener("mouseenter", function () { showTip(i); });
+          b.addEventListener("mouseleave", function () { if (activeEx === i) hideTip(); });
+          b.addEventListener("focus", function () { showTip(i); });
+          b.addEventListener("blur", function () { if (activeEx === i) hideTip(); });
+          b.addEventListener("click", function (ev) {
+            ev.stopPropagation();
+            if (activeEx === i) hideTip(); else showTip(i);
+          });
+          markersLayer.appendChild(b);
+          return b;
+        });
+
+        var updateMarkers = function () {
+          var s = cssSize();
+          for (var j = 0; j < exchanges.length; j++) {
+            var p = projectMarker(exchanges[j].lat, exchanges[j].lng, renderedPhi, s);
+            var el = markerEls[j];
+            if (!p) {
+              if (el.dataset.front !== "0") el.dataset.front = "0";
+              continue;
+            }
+            if (el.dataset.front !== "1") el.dataset.front = "1";
+            el.style.transform = "translate(" + p.x.toFixed(1) + "px," + p.y.toFixed(1) + "px) scale(" +
+              (0.7 + 0.4 * p.depth).toFixed(3) + ")";
+          }
+          if (activeEx >= 0) positionTip();
+        };
 
         var globe = createGlobe(canvas, {
           devicePixelRatio: dpr,
@@ -398,12 +793,7 @@ var EMAIL = "iddo.etkin@gmail.com";
           baseColor: [0.35, 0.35, 0.35],
           markerColor: [0.87, 0.87, 0.87],
           glowColor: [0.7, 0.7, 0.7],
-          markers: exchanges.map(function (e) {
-            return {
-              location: [e.lat, e.lng],
-              size: 0.028 + 0.072 * Math.sqrt(e.companies / maxCount)
-            };
-          }),
+          markers: [],
           onRender: function (state) {
             if (visible) {
               if (pointerDown === null) {
@@ -412,7 +802,7 @@ var EMAIL = "iddo.etkin@gmail.com";
               }
               renderedPhi = phi + pointerPhi;
               state.phi = renderedPhi;
-              if (activeEx >= 0) positionTip();
+              updateMarkers();
             }
             var s = globeWrap.getBoundingClientRect().width;
             state.width = s * dpr;
@@ -422,95 +812,30 @@ var EMAIL = "iddo.etkin@gmail.com";
 
         canvas.classList.add("is-ready");
 
-        var cssSize = function () { return globeWrap.getBoundingClientRect().width; };
-
-        var positionTip = function () {
-          var e = exchanges[activeEx];
-          var p = projectMarker(e.lat, e.lng, renderedPhi, cssSize());
-          if (!p) { hideTip(); return; }
-          tip.style.left = p.x + "px";
-          tip.style.top = p.y + "px";
-        };
-
-        var showTip = function (idx) {
-          var e = exchanges[idx];
-          activeEx = idx;
-          tip.innerHTML = "<strong></strong>";
-          tip.querySelector("strong").textContent = e.name;
-          tip.appendChild(document.createTextNode(
-            e.companies.toLocaleString("en-US") + " companies monitored"));
-          tip.hidden = false;
-          positionTip();
-        };
-
-        var hideTip = function () {
-          activeEx = -1;
-          tip.hidden = true;
-        };
-
-        var pickAt = function (clientX, clientY) {
-          var rect = canvas.getBoundingClientRect();
-          var px = clientX - rect.left, py = clientY - rect.top;
-          var s = rect.width;
-          var best = -1, bestD = 18 * 18;
-          for (var j = 0; j < exchanges.length; j++) {
-            var p = projectMarker(exchanges[j].lat, exchanges[j].lng, renderedPhi, s);
-            if (!p) continue;
-            var dx = p.x - px, dy = p.y - py;
-            var d = dx * dx + dy * dy;
-            if (d < bestD) { bestD = d; best = j; }
-          }
-          return best;
-        };
-
-        /* hover */
+        /* drag to rotate */
+        canvas.addEventListener("pointerdown", function (e) {
+          pointerDown = e.clientX;
+          hideTip();
+          canvas.classList.add("is-dragging");
+          canvas.setPointerCapture(e.pointerId);
+        });
         canvas.addEventListener("pointermove", function (e) {
           if (pointerDown !== null) {
             var delta = e.clientX - pointerDown;
             pointerPhi = delta * 0.005;
             velocity = (e.movementX || 0) * 0.002;
-            return;
-          }
-          if (e.pointerType === "mouse") {
-            var idx = pickAt(e.clientX, e.clientY);
-            if (idx >= 0) { if (idx !== activeEx) showTip(idx); }
-            else hideTip();
           }
         });
-        canvas.addEventListener("pointerleave", hideTip);
-
-        /* drag to rotate + tap to pick */
-        canvas.addEventListener("pointerdown", function (e) {
-          pointerDown = e.clientX;
-          pointerStart = [e.clientX, e.clientY];
-          hideTip();
-          canvas.classList.add("is-dragging");
-          canvas.setPointerCapture(e.pointerId);
-        });
-        var release = function (e) {
+        var release = function () {
           if (pointerDown === null) return;
-          var wasTap = pointerStart &&
-            Math.abs(e.clientX - pointerStart[0]) < 6 &&
-            Math.abs(e.clientY - pointerStart[1]) < 6;
           phi += pointerPhi;
           pointerPhi = 0;
           pointerDown = null;
-          pointerStart = null;
           canvas.classList.remove("is-dragging");
-          if (wasTap) {
-            var idx = pickAt(e.clientX, e.clientY);
-            if (idx >= 0) showTip(idx); else hideTip();
-          }
         };
         canvas.addEventListener("pointerup", release);
-        canvas.addEventListener("pointercancel", function () {
-          pointerPhi = 0;
-          pointerDown = null;
-          pointerStart = null;
-          canvas.classList.remove("is-dragging");
-        });
+        canvas.addEventListener("pointercancel", release);
 
-        /* pause rendering math when offscreen */
         new IntersectionObserver(function (entries) {
           visible = entries[0].isIntersecting;
         }, { threshold: 0 }).observe(globeWrap);
@@ -527,8 +852,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       var globeLazy = new IntersectionObserver(function (entries) {
         if (entries[0].isIntersecting) {
           globeLazy.disconnect();
-          fetch("assets/exchanges.json")
-            .then(function (r) { return r.json(); })
+          getExchanges()
             .then(function (data) { initGlobe(data.exchanges); })
             .catch(useFallback);
         }

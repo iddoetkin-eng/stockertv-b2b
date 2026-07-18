@@ -47,6 +47,7 @@
     <section class="hero" id="hero">
       <div class="hero-glow" aria-hidden="true"></div>
       <canvas id="hero-fx" aria-hidden="true"></canvas>
+      <div class="hero-scrim" aria-hidden="true"></div>
       <div class="container hero-inner">
         <p class="eyebrow reveal">StockerTV for Financial Platforms</p>
         <h1 class="reveal" style="--d:.08s">Financial news becomes broadcast&#8209;ready video. <em>Automatically.</em></h1>
@@ -104,6 +105,7 @@
                 <circle cx="296" cy="176" r="3" fill="var(--accent)"/><!-- Shenzhen -->
                 <circle cx="330" cy="142" r="5" fill="var(--accent)"/><!-- Tokyo -->
               </svg>
+              <div class="globe-markers" id="globe-markers"></div>
               <div class="globe-tip" id="globe-tip" role="status" hidden></div>
             </div>
             <p class="globe-caption">All 53 exchanges, marker size to scale. Hover or tap a marker for its coverage count.</p>
@@ -126,6 +128,9 @@
                     <svg width="34" height="10" viewBox="0 0 34 10" fill="none"><rect x="0" y="3" width="3" height="7" rx="1" fill="currentColor"/><rect x="5" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="10" y="0.5" width="3" height="9.5" rx="1" fill="currentColor"/><rect x="17" y="0" width="15" height="10" rx="3" stroke="currentColor" fill="none"/><rect x="19" y="2" width="9" height="6" rx="1.5" fill="currentColor"/></svg>
                   </span>
                 </div>
+                <div class="app" id="app">
+                <div class="app-views">
+                <div class="app-view is-active" data-view="feed">
                 <div class="phone-feed" id="phone-feed" aria-label="StockerTV video feed — scroll to browse, tap for sound">
                   <div class="feed-slide">
                     <video src="assets/feed/feed-nvda.mp4" data-poster="assets/feed/feed-nvda-poster.jpg" muted loop playsinline preload="metadata" aria-label="StockerTV video: NVIDIA Q4 earnings brief"></video>
@@ -144,6 +149,65 @@
                     <span class="feed-tag">DE · Operations</span>
                   </div>
                   <button type="button" class="feed-sound" id="feed-sound" aria-pressed="false">Tap for sound</button>
+                </div>
+                </div>
+
+                <div class="app-view" data-view="search">
+                  <div class="app-head">Search</div>
+                  <div class="app-search-wrap">
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5 L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <input type="search" class="app-search-input" id="app-search-input" placeholder="Search companies" aria-label="Search companies" autocomplete="off">
+                  </div>
+                  <ul class="app-list" id="app-results"></ul>
+                  <p class="app-empty" id="app-empty" hidden>No matches in this demo list</p>
+                  <div class="app-brief" id="app-brief" hidden>
+                    <button type="button" class="app-back" id="app-back">
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9 2 L4 7 L9 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Back
+                    </button>
+                    <div class="app-brief-head" id="app-brief-head"></div>
+                    <div class="app-brief-media" id="app-brief-media"></div>
+                  </div>
+                </div>
+
+                <div class="app-view" data-view="markets">
+                  <div class="app-head">Markets</div>
+                  <ul class="app-list app-mkts" id="app-mkts"></ul>
+                </div>
+
+                <div class="app-view" data-view="profile">
+                  <div class="app-head">Profile</div>
+                  <div class="app-profile">
+                    <span class="app-avatar" aria-hidden="true">D</span>
+                    <strong>Demo account</strong>
+                    <span class="app-profile-sub">StockerTV for platforms</span>
+                    <ul class="app-list app-settings">
+                      <li><span>Language</span><span class="app-val">English</span></li>
+                      <li><span>Watchlist</span><span class="app-val">12 companies</span></li>
+                      <li><span>Notifications</span><span class="app-val">On</span></li>
+                    </ul>
+                  </div>
+                </div>
+                </div>
+
+                <nav class="app-nav" aria-label="App sections">
+                  <button type="button" class="app-tab is-active" data-tab="feed" aria-pressed="true">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8.5 7.5 L12.5 10 L8.5 12.5 Z" fill="currentColor"/></svg>
+                    <span>Feed</span>
+                  </button>
+                  <button type="button" class="app-tab" data-tab="search" aria-pressed="false">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.5 13.5 L17.5 17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <span>Search</span>
+                  </button>
+                  <button type="button" class="app-tab" data-tab="markets" aria-pressed="false">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 17 V11 M8 17 V7 M13 17 V9.5 M17.5 17 V4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <span>Markets</span>
+                  </button>
+                  <button type="button" class="app-tab" data-tab="profile" aria-pressed="false">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="6.5" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 17.5 C4.5 13.5 7 12 10 12 C13 12 15.5 13.5 16.5 17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                    <span>Profile</span>
+                  </button>
+                </nav>
                 </div>
               </div>
             </div>
