@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#000000">
   <title>StockerTV — AI Financial Video, White-Labeled for Your Platform</title>
-  <meta name="description" content="StockerTV monitors 32,190 public companies across 53 exchanges and turns breaking news into compliant, avatar-presented video in minutes. White-labeled for banks, brokers, and trading platforms.">
+  <meta name="description" content="StockerTV monitors 32,981 public companies across 53 exchanges and turns breaking news into compliant, avatar-presented video in minutes. White-labeled for banks, brokers, and trading platforms.">
 
   <meta property="og:type" content="website">
   <meta property="og:title" content="StockerTV — AI Financial Video, White-Labeled for Your Platform">
-  <meta property="og:description" content="32,190 companies. 53 exchanges. Breaking financial news becomes compliant, avatar-presented video in minutes — under your brand.">
+  <meta property="og:description" content="32,981 companies. 53 exchanges. Breaking financial news becomes compliant, avatar-presented video in minutes — under your brand.">
   <meta property="og:url" content="https://iddoetkin-eng.github.io/stockertv-b2b/">
   <meta property="og:image" content="https://iddoetkin-eng.github.io/stockertv-b2b/assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="StockerTV — AI Financial Video, White-Labeled for Your Platform">
-  <meta name="twitter:description" content="32,190 companies. 53 exchanges. Breaking financial news becomes compliant, avatar-presented video in minutes — under your brand.">
+  <meta name="twitter:description" content="32,981 companies. 53 exchanges. Breaking financial news becomes compliant, avatar-presented video in minutes — under your brand.">
   <meta name="twitter:image" content="https://iddoetkin-eng.github.io/stockertv-b2b/assets/og.png">
   <link rel="canonical" href="https://iddoetkin-eng.github.io/stockertv-b2b/">
 
@@ -44,11 +44,13 @@
   <main>
 
     <!-- ============ 1. HERO ============ -->
-    <section class="hero">
+    <section class="hero" id="hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <canvas id="hero-fx" aria-hidden="true"></canvas>
       <div class="container hero-inner">
         <p class="eyebrow reveal">StockerTV for Financial Platforms</p>
         <h1 class="reveal" style="--d:.08s">Financial news becomes broadcast&#8209;ready video. <em>Automatically.</em></h1>
-        <p class="sub reveal" style="--d:.16s">StockerTV monitors 32,190 public companies worldwide and turns breaking news into compliant, avatar-presented video — in minutes, not days. White-labeled for your platform.</p>
+        <p class="sub reveal" style="--d:.16s">StockerTV monitors 32,981 public companies worldwide and turns breaking news into compliant, avatar-presented video — in minutes, not days. White-labeled for your platform.</p>
         <div class="cta-row reveal" style="--d:.24s">
           <a class="btn btn-primary" href="mailto:iddo.etkin@gmail.com?subject=StockerTV%20demo%20request" data-mailto="StockerTV demo request">Book a demo</a>
           <a class="btn btn-ghost" href="#pipeline">See how it works</a>
@@ -69,7 +71,7 @@
             <p class="body-lg reveal" style="--d:.12s">Every listed company your users can hold — across the Americas, Europe, Asia, and the Middle East. When news breaks anywhere, coverage begins within minutes.</p>
             <div class="stats reveal" style="--d:.18s">
               <div class="stat">
-                <span class="stat-num" data-count="32190">32,190</span>
+                <span class="stat-num" data-count="32981">32,981</span>
                 <span class="stat-label">companies monitored</span>
               </div>
               <div class="stat">
@@ -84,7 +86,7 @@
           </div>
           <div class="globe-col reveal" style="--d:.1s">
             <div class="globe-wrap" id="globe-wrap">
-              <canvas id="globe-canvas" aria-label="Rotating globe showing exchange coverage in New York, London, Frankfurt, Tel Aviv, Hong Kong, Shanghai, Shenzhen, and Tokyo" role="img"></canvas>
+              <canvas id="globe-canvas" aria-label="Interactive globe showing all 53 covered exchanges. Hover or tap a marker for the number of companies monitored there." role="img"></canvas>
               <svg class="globe-fallback" id="globe-fallback" viewBox="0 0 400 400" aria-hidden="true">
                 <circle cx="200" cy="200" r="180" fill="none" stroke="var(--border-strong)" stroke-width="1.5"/>
                 <ellipse cx="200" cy="200" rx="180" ry="180" fill="none" stroke="var(--border)" stroke-width="1"/>
@@ -102,8 +104,9 @@
                 <circle cx="296" cy="176" r="3" fill="var(--accent)"/><!-- Shenzhen -->
                 <circle cx="330" cy="142" r="5" fill="var(--accent)"/><!-- Tokyo -->
               </svg>
+              <div class="globe-tip" id="globe-tip" role="status" hidden></div>
             </div>
-            <p class="globe-caption">Live markers: New York · London · Frankfurt · Tel Aviv · Hong Kong · Shanghai · Shenzhen · Tokyo</p>
+            <p class="globe-caption">All 53 exchanges, marker size to scale. Hover or tap a marker for its coverage count.</p>
           </div>
         </div>
       </div>
@@ -123,37 +126,28 @@
                     <svg width="34" height="10" viewBox="0 0 34 10" fill="none"><rect x="0" y="3" width="3" height="7" rx="1" fill="currentColor"/><rect x="5" y="2" width="3" height="8" rx="1" fill="currentColor"/><rect x="10" y="0.5" width="3" height="9.5" rx="1" fill="currentColor"/><rect x="17" y="0" width="15" height="10" rx="3" stroke="currentColor" fill="none"/><rect x="19" y="2" width="9" height="6" rx="1.5" fill="currentColor"/></svg>
                   </span>
                 </div>
-                <div class="phone-video">
-                  <svg class="pv-chart" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true">
-                    <path d="M0,95 L25,88 L50,92 L75,70 L100,76 L125,58 L150,64 L175,45 L200,52 L225,34 L250,40 L275,22 L300,28" fill="none" stroke="rgba(222,222,222,.5)" stroke-width="2"/>
-                    <path d="M0,95 L25,88 L50,92 L75,70 L100,76 L125,58 L150,64 L175,45 L200,52 L225,34 L250,40 L275,22 L300,28 L300,120 L0,120 Z" fill="rgba(222,222,222,.08)"/>
-                  </svg>
-                  <div class="pv-presenter" aria-hidden="true">
-                    <span class="pv-p-head"></span>
-                    <span class="pv-p-body"></span>
+                <div class="phone-feed" id="phone-feed" aria-label="StockerTV video feed — scroll to browse, tap for sound">
+                  <div class="feed-slide">
+                    <video src="assets/feed/feed-nvda.mp4" data-poster="assets/feed/feed-nvda-poster.jpg" muted loop playsinline preload="metadata" aria-label="StockerTV video: NVIDIA Q4 earnings brief"></video>
+                    <span class="feed-tag">EN · Earnings</span>
                   </div>
-                  <div class="pv-reporter">
-                    <span class="pv-avatar" aria-hidden="true"></span>
-                    <span class="pv-reporter-meta">
-                      <strong>Earnings desk</strong>
-                      <span>AI reporter · EN</span>
-                    </span>
+                  <div class="feed-slide">
+                    <video src="assets/feed/feed-es.mp4" data-poster="assets/feed/feed-es-poster.jpg" muted loop playsinline preload="none" aria-label="StockerTV video in Spanish: product launch brief"></video>
+                    <span class="feed-tag">ES · Product</span>
                   </div>
-                  <div class="pv-live" aria-hidden="true"><span class="pv-live-dot"></span>New brief</div>
-                  <div class="lower-third" id="lower-third">
-                    <span class="lt-chip">NVDA <em>+3.1%</em></span>
-                    <p class="lt-headline">Record data-center revenue drives Q4 beat</p>
+                  <div class="feed-slide">
+                    <video src="assets/feed/feed-gld.mp4" data-poster="assets/feed/feed-gld-poster.jpg" muted loop playsinline preload="none" aria-label="StockerTV video: gold industry markets brief"></video>
+                    <span class="feed-tag">EN · Markets</span>
                   </div>
-                  <div class="pv-progress" aria-hidden="true"><span class="pv-progress-fill" id="pv-progress"></span></div>
-                  <div class="pv-controls" aria-hidden="true">
-                    <svg width="12" height="14" viewBox="0 0 12 14"><path d="M0 0 L12 7 L0 14 Z" fill="currentColor"/></svg>
-                    <span>0:34 / 0:42</span>
-                    <svg width="14" height="12" viewBox="0 0 14 12" fill="none"><path d="M1 4.5 V1 H4.5 M9.5 1 H13 V4.5 M13 7.5 V11 H9.5 M4.5 11 H1 V7.5" stroke="currentColor" stroke-width="1.4"/></svg>
+                  <div class="feed-slide">
+                    <video src="assets/feed/feed-de.mp4" data-poster="assets/feed/feed-de-poster.jpg" muted loop playsinline preload="none" aria-label="StockerTV video in German: operations brief"></video>
+                    <span class="feed-tag">DE · Operations</span>
                   </div>
+                  <button type="button" class="feed-sound" id="feed-sound" aria-pressed="false">Tap for sound</button>
                 </div>
               </div>
             </div>
-            <p class="sample-note">Sample content</p>
+            <p class="sample-note">Real StockerTV content</p>
           </div>
           <div class="product-copy">
             <p class="eyebrow reveal">Product</p>
@@ -181,7 +175,7 @@
           <p class="body-lg center reveal" style="--d:.12s">The full pipeline, in half a minute.</p>
         </div>
         <div class="video-card reveal" style="--d:.1s">
-          <video controls preload="none" playsinline poster="assets/video-poster.jpg" aria-label="StockerTV explainer video">
+          <video controls preload="none" playsinline data-poster="assets/video-poster.jpg" aria-label="StockerTV explainer video">
             <source src="assets/stockertv-intro.mp4" type="video/mp4">
           </video>
         </div>
@@ -279,7 +273,7 @@
               </span>
               <span class="pipe-num">01</span>
               <h3>Detect</h3>
-              <p>AI scans global news across all 32,190 companies, around the clock.</p>
+              <p>AI scans global news across all 32,981 companies, around the clock.</p>
             </li>
             <li class="pipe-card reveal" style="--d:.08s">
               <span class="pipe-icon" aria-hidden="true">

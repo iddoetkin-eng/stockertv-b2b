@@ -1,0 +1,376 @@
+{
+ "total": 32981,
+ "exchanges": [
+  {
+   "name": "NYSE / NASDAQ",
+   "city": "New York",
+   "lat": 40.7128,
+   "lng": -74.006,
+   "companies": 7570
+  },
+  {
+   "name": "Tokyo Stock Exchange",
+   "city": "Tokyo",
+   "lat": 35.6762,
+   "lng": 139.6503,
+   "companies": 3376
+  },
+  {
+   "name": "Shenzhen Stock Exchange",
+   "city": "Shenzhen",
+   "lat": 22.5431,
+   "lng": 114.0579,
+   "companies": 2767
+  },
+  {
+   "name": "Frankfurt Stock Exchange",
+   "city": "Frankfurt",
+   "lat": 50.1109,
+   "lng": 8.6821,
+   "companies": 2433
+  },
+  {
+   "name": "Shanghai Stock Exchange",
+   "city": "Shanghai",
+   "lat": 31.2304,
+   "lng": 121.4737,
+   "companies": 2167
+  },
+  {
+   "name": "Hong Kong Stock Exchange",
+   "city": "Hong Kong",
+   "lat": 22.3193,
+   "lng": 114.1694,
+   "companies": 2137
+  },
+  {
+   "name": "Australian Securities Exchange",
+   "city": "Sydney",
+   "lat": -33.8688,
+   "lng": 151.2093,
+   "companies": 1183
+  },
+  {
+   "name": "Bursa Malaysia",
+   "city": "Kuala Lumpur",
+   "lat": 3.139,
+   "lng": 101.6869,
+   "companies": 923
+  },
+  {
+   "name": "Korea Stock Exchange (KRX)",
+   "city": "Seoul",
+   "lat": 37.5665,
+   "lng": 126.978,
+   "companies": 816
+  },
+  {
+   "name": "Taiwan Stock Exchange",
+   "city": "Taipei",
+   "lat": 25.033,
+   "lng": 121.5654,
+   "companies": 797
+  },
+  {
+   "name": "Indonesia Stock Exchange",
+   "city": "Jakarta",
+   "lat": -6.2088,
+   "lng": 106.8456,
+   "companies": 782
+  },
+  {
+   "name": "Borsa Istanbul",
+   "city": "Istanbul",
+   "lat": 41.0082,
+   "lng": 28.9784,
+   "companies": 587
+  },
+  {
+   "name": "Stock Exchange of Thailand",
+   "city": "Bangkok",
+   "lat": 13.7563,
+   "lng": 100.5018,
+   "companies": 568
+  },
+  {
+   "name": "London Stock Exchange",
+   "city": "London",
+   "lat": 51.5074,
+   "lng": -0.1278,
+   "companies": 492
+  },
+  {
+   "name": "Singapore Exchange",
+   "city": "Singapore",
+   "lat": 1.3521,
+   "lng": 103.8198,
+   "companies": 483
+  },
+  {
+   "name": "Euronext Paris",
+   "city": "Paris",
+   "lat": 48.8566,
+   "lng": 2.3522,
+   "companies": 418
+  },
+  {
+   "name": "Nasdaq Stockholm",
+   "city": "Stockholm",
+   "lat": 59.3293,
+   "lng": 18.0686,
+   "companies": 416
+  },
+  {
+   "name": "Tel Aviv Stock Exchange",
+   "city": "Tel Aviv",
+   "lat": 32.0853,
+   "lng": 34.7818,
+   "companies": 381
+  },
+  {
+   "name": "Pakistan Stock Exchange",
+   "city": "Karachi",
+   "lat": 24.8607,
+   "lng": 67.0011,
+   "companies": 373
+  },
+  {
+   "name": "B3 (São Paulo)",
+   "city": "São Paulo",
+   "lat": -23.5505,
+   "lng": -46.6333,
+   "companies": 356
+  },
+  {
+   "name": "Toronto Stock Exchange",
+   "city": "Toronto",
+   "lat": 43.6532,
+   "lng": -79.3832,
+   "companies": 355
+  },
+  {
+   "name": "Dhaka Stock Exchange",
+   "city": "Dhaka",
+   "lat": 23.8103,
+   "lng": 90.4125,
+   "companies": 342
+  },
+  {
+   "name": "Warsaw Stock Exchange",
+   "city": "Warsaw",
+   "lat": 52.2297,
+   "lng": 21.0122,
+   "companies": 304
+  },
+  {
+   "name": "Colombo Stock Exchange",
+   "city": "Colombo",
+   "lat": 6.9271,
+   "lng": 79.8612,
+   "companies": 273
+  },
+  {
+   "name": "NYSE American (AMEX)",
+   "city": "New York",
+   "lat": 40.6892,
+   "lng": -74.0445,
+   "companies": 247
+  },
+  {
+   "name": "Ho Chi Minh Stock Exchange",
+   "city": "Ho Chi Minh City",
+   "lat": 10.8231,
+   "lng": 106.6297,
+   "companies": 219
+  },
+  {
+   "name": "Borsa Italiana",
+   "city": "Milan",
+   "lat": 45.4642,
+   "lng": 9.19,
+   "companies": 195
+  },
+  {
+   "name": "Hanoi Stock Exchange",
+   "city": "Hanoi",
+   "lat": 21.0285,
+   "lng": 105.8542,
+   "companies": 170
+  },
+  {
+   "name": "Saudi Stock Exchange (Tadawul)",
+   "city": "Riyadh",
+   "lat": 24.7136,
+   "lng": 46.6753,
+   "companies": 156
+  },
+  {
+   "name": "Oslo Børs",
+   "city": "Oslo",
+   "lat": 59.9139,
+   "lng": 10.7522,
+   "companies": 141
+  },
+  {
+   "name": "Santiago Stock Exchange",
+   "city": "Santiago",
+   "lat": -33.4489,
+   "lng": -70.6693,
+   "companies": 140
+  },
+  {
+   "name": "Nigerian Stock Exchange",
+   "city": "Lagos",
+   "lat": 6.5244,
+   "lng": 3.3792,
+   "companies": 128
+  },
+  {
+   "name": "Bucharest Stock Exchange",
+   "city": "Bucharest",
+   "lat": 44.4268,
+   "lng": 26.1025,
+   "companies": 120
+  },
+  {
+   "name": "Philippine Stock Exchange",
+   "city": "Manila",
+   "lat": 14.5995,
+   "lng": 120.9842,
+   "companies": 118
+  },
+  {
+   "name": "Bolsa de Madrid",
+   "city": "Madrid",
+   "lat": 40.4168,
+   "lng": -3.7038,
+   "companies": 115
+  },
+  {
+   "name": "Athens Stock Exchange",
+   "city": "Athens",
+   "lat": 37.9838,
+   "lng": 23.7275,
+   "companies": 109
+  },
+  {
+   "name": "Nasdaq Helsinki",
+   "city": "Helsinki",
+   "lat": 60.1699,
+   "lng": 24.9384,
+   "companies": 103
+  },
+  {
+   "name": "Johannesburg Stock Exchange",
+   "city": "Johannesburg",
+   "lat": -26.2041,
+   "lng": 28.0473,
+   "companies": 95
+  },
+  {
+   "name": "Nasdaq Copenhagen",
+   "city": "Copenhagen",
+   "lat": 55.6761,
+   "lng": 12.5683,
+   "companies": 75
+  },
+  {
+   "name": "Vienna Stock Exchange",
+   "city": "Vienna",
+   "lat": 48.2082,
+   "lng": 16.3738,
+   "companies": 69
+  },
+  {
+   "name": "SIX Swiss Exchange",
+   "city": "Zurich",
+   "lat": 47.3769,
+   "lng": 8.5417,
+   "companies": 58
+  },
+  {
+   "name": "Buenos Aires Stock Exchange",
+   "city": "Buenos Aires",
+   "lat": -34.6037,
+   "lng": -58.3816,
+   "companies": 54
+  },
+  {
+   "name": "Qatar Stock Exchange",
+   "city": "Doha",
+   "lat": 25.2854,
+   "lng": 51.531,
+   "companies": 52
+  },
+  {
+   "name": "Dubai Financial Market",
+   "city": "Dubai",
+   "lat": 25.2048,
+   "lng": 55.2708,
+   "companies": 47
+  },
+  {
+   "name": "Nairobi Securities Exchange",
+   "city": "Nairobi",
+   "lat": -1.2921,
+   "lng": 36.8219,
+   "companies": 43
+  },
+  {
+   "name": "Bolsa Mexicana de Valores",
+   "city": "Mexico City",
+   "lat": 19.4326,
+   "lng": -99.1332,
+   "companies": 41
+  },
+  {
+   "name": "Euronext Brussels",
+   "city": "Brussels",
+   "lat": 50.8503,
+   "lng": 4.3517,
+   "companies": 41
+  },
+  {
+   "name": "Budapest Stock Exchange",
+   "city": "Budapest",
+   "lat": 47.4979,
+   "lng": 19.0402,
+   "companies": 40
+  },
+  {
+   "name": "Euronext Amsterdam",
+   "city": "Amsterdam",
+   "lat": 52.3676,
+   "lng": 4.9041,
+   "companies": 35
+  },
+  {
+   "name": "Prague Stock Exchange",
+   "city": "Prague",
+   "lat": 50.0755,
+   "lng": 14.4378,
+   "companies": 22
+  },
+  {
+   "name": "New Zealand Stock Exchange",
+   "city": "Wellington",
+   "lat": -41.2866,
+   "lng": 174.7756,
+   "companies": 21
+  },
+  {
+   "name": "Euronext Lisbon",
+   "city": "Lisbon",
+   "lat": 38.7223,
+   "lng": -9.1393,
+   "companies": 18
+  },
+  {
+   "name": "Euronext Dublin",
+   "city": "Dublin",
+   "lat": 53.3498,
+   "lng": -6.2603,
+   "companies": 10
+  }
+ ]
+}
