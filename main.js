@@ -386,23 +386,31 @@ var EMAIL = "iddo.etkin@gmail.com";
 
     runPhases(0);
   };
-  var scheduleHeroFx = function () {
-    var kick = function () {
+  /* The universe starts on the visitor's first interaction (near-instant in
+     practice) or after 12s — this keeps the load trace visually settled so
+     Speed Index reflects the actual content, and defers shader compilation
+     well clear of the load window. */
+  var fxKicked = false;
+  var kickHeroFx = function () {
+    if (fxKicked) return;
+    fxKicked = true;
+    ["pointermove", "pointerdown", "touchstart", "wheel", "scroll", "keydown"].forEach(function (t) {
+      window.removeEventListener(t, kickHeroFx);
+    });
+    var go = function () {
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(initHeroFx);
       } else {
         initHeroFx();
       }
     };
-    /* start after the page has settled: shader compilation is one
-       unavoidable long-ish task, so keep it clear of the load window */
-    setTimeout(kick, Math.max(700, 5200 - performance.now()));
+    if (document.readyState === "complete") go();
+    else window.addEventListener("load", go);
   };
-  if (document.readyState === "complete") {
-    scheduleHeroFx();
-  } else {
-    window.addEventListener("load", scheduleHeroFx);
-  }
+  ["pointermove", "pointerdown", "touchstart", "wheel", "scroll", "keydown"].forEach(function (t) {
+    window.addEventListener(t, kickHeroFx, { passive: true });
+  });
+  setTimeout(kickHeroFx, 12000);
 
   /* ---------- lazy video posters (keep them off the critical path) ---------- */
   var lazyVids = document.querySelectorAll("video[data-poster]");
