@@ -73,7 +73,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
       p.setAttribute("d", d);
       p.setAttribute("fill", "none");
-      p.setAttribute("stroke", "#0E6B59");
+      p.setAttribute("stroke", "#dedede");
       p.setAttribute("stroke-width", width);
       p.setAttribute("opacity", opacity);
       p.setAttribute("class", "wave-path " + cls);
@@ -177,13 +177,13 @@ var EMAIL = "iddo.etkin@gmail.com";
           height: size * dpr,
           phi: phi,
           theta: 0.22,
-          dark: 0,
-          diffuse: 0.4,
+          dark: 1,
+          diffuse: 1.2,
           mapSamples: 16000,
-          mapBrightness: 1.2,
-          baseColor: [1, 1, 1],
-          markerColor: [0.055, 0.42, 0.35],
-          glowColor: [1, 1, 1],
+          mapBrightness: 6,
+          baseColor: [0.35, 0.35, 0.35],
+          markerColor: [0.87, 0.87, 0.87],
+          glowColor: [0.7, 0.7, 0.7],
           markers: [
             { location: [40.7128, -74.006], size: 0.1 },   // New York
             { location: [51.5074, -0.1278], size: 0.09 },  // London
