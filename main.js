@@ -122,6 +122,8 @@ var EMAIL = "iddo.etkin@gmail.com";
     var isMobile = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 720;
     var N = isMobile ? 30000 : 110000;
     var dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 1.5);
+    /* elegant serif wordmark — same face as the site headlines */
+    var WORDMARK_FONT = '700 240px "Instrument Serif", "New York", Georgia, serif';
 
     var VS =
       "attribute vec3 aA;\n" +
@@ -137,13 +139,13 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  float wv = sin(pA.x * 3.4 + uT * 1.15 + aA.y * 5.0) * 0.50\n" +
       "           + sin(pA.x * 6.8 - uT * 0.85 + aA.y * 9.0) * 0.26\n" +
       "           + sin(pA.x * 12.0 + uT * 0.60 + aA.y * 14.0) * 0.13;\n" +
-      "  pA.y += wv * 0.16;\n" +
+      "  pA.y += wv * 0.13;\n" +
       "  vec3 pB = aB;\n" +
       "  float cr = cos(uRotY), sr = sin(uRotY);\n" +
       "  pB = vec3(pB.x * cr + pB.z * sr, pB.y, -pB.x * sr + pB.z * cr) * uScaleB;\n" +
       "  vec3 pC = aC * uScaleC;\n" +
       "  pC.y -= 0.56;\n" +
-      "  pC.xy += vec2(sin(uT * 1.4 + aSeed * 6.28), cos(uT * 1.1 + aSeed * 6.28)) * 0.005;\n" +
+      "  pC.xy += vec2(sin(uT * 1.4 + aSeed * 6.28), cos(uT * 1.1 + aSeed * 6.28)) * 0.003;\n" +
       "  vec2 c = pA.xy * uW.x + vec2(pB.x * uIA, pB.y) * uW.y + vec2(pC.x * uIA, pC.y) * uW.z;\n" +
       "  float z = pA.z * uW.x + pB.z * uW.y + pC.z * uW.z;\n" +
       "  float focus = max(max(uW.x, uW.y), uW.z);\n" +
@@ -226,37 +228,38 @@ var EMAIL = "iddo.etkin@gmail.com";
         var yy = 1 - (i / (N - 1)) * 2;
         var rr = Math.sqrt(Math.max(0, 1 - yy * yy));
         var th = GA * i;
-        B[i * 3] = Math.cos(th) * rr * 0.74;
-        B[i * 3 + 1] = yy * 0.74;
-        B[i * 3 + 2] = Math.sin(th) * rr * 0.74;
+        B[i * 3] = Math.cos(th) * rr * 0.62;
+        B[i * 3 + 1] = yy * 0.62;
+        B[i * 3 + 2] = Math.sin(th) * rr * 0.62;
       }
     });
 
     phases.push(function () {
-      /* shape C: the wordmark, sampled from rasterized text (square units) */
+      /* shape C: the wordmark, sampled from rasterized text (square units).
+         The font is guaranteed loaded before phases start — see startPhases. */
       C = new Float32Array(N * 3);
       var tc = document.createElement("canvas");
-      tc.width = 900; tc.height = 225;
+      tc.width = 1400; tc.height = 340;
       var ctx = tc.getContext("2d", { willReadFrequently: true });
       ctx.fillStyle = "#fff";
-      ctx.font = '158px "Instrument Serif", Georgia, serif';
+      ctx.font = WORDMARK_FONT;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("StockerTV", 450, 118);
-      var img = ctx.getImageData(0, 0, 900, 225).data;
+      ctx.fillText("StockerTV", 700, 178);
+      var img = ctx.getImageData(0, 0, 1400, 340).data;
       var px = [];
-      for (var y = 0; y < 225; y += 2) {
-        for (var x = 0; x < 900; x += 2) {
-          if (img[(y * 900 + x) * 4 + 3] > 128) px.push(x, y);
+      for (var y = 0; y < 340; y += 2) {
+        for (var x = 0; x < 1400; x += 2) {
+          if (img[(y * 1400 + x) * 4 + 3] > 128) px.push(x, y);
         }
       }
-      if (!px.length) px = [450, 112];
-      var HW = 0.82;
+      if (!px.length) px = [700, 170];
+      var HW = 0.68;
       for (var k = 0; k < N; k++) {
         var pi = (Math.floor(Math.random() * (px.length / 2))) * 2;
-        C[k * 3] = ((px[pi] + Math.random() * 2) / 900 - 0.5) * 2 * HW;
-        C[k * 3 + 1] = (0.5 - (px[pi + 1] + Math.random() * 2) / 225) * 2 * HW * 0.25;
-        C[k * 3 + 2] = (Math.random() - 0.5) * 0.14;
+        C[k * 3] = ((px[pi] + Math.random() * 1.2) / 1400 - 0.5) * 2 * HW;
+        C[k * 3 + 1] = (0.5 - (px[pi + 1] + Math.random() * 1.2) / 340) * 2 * HW * 0.243;
+        C[k * 3 + 2] = (Math.random() - 0.5) * 0.1;
       }
     });
 
@@ -292,8 +295,8 @@ var EMAIL = "iddo.etkin@gmail.com";
       gl.viewport(0, 0, canvas.width, canvas.height);
       IA = r.height / r.width;
       gl.uniform1f(U.uIA, IA);
-      gl.uniform1f(U.uScaleB, Math.min(1, 0.85 / (0.74 * IA)));
-      gl.uniform1f(U.uScaleC, Math.min(1, 0.95 / (0.82 * IA)));
+      gl.uniform1f(U.uScaleB, Math.min(1, 0.85 / (0.62 * IA)));
+      gl.uniform1f(U.uScaleC, Math.min(1, 0.95 / (0.68 * IA)));
     };
     resize();
     window.addEventListener("resize", resize);
@@ -395,7 +398,14 @@ var EMAIL = "iddo.etkin@gmail.com";
     ensure();
     };
 
-    runPhases(0);
+    /* make sure the serif face is actually loaded before the wordmark is
+       rasterized — never sample with a fallback font */
+    var startPhases = function () { runPhases(0); };
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load(WORDMARK_FONT, "StockerTV").then(startPhases, startPhases);
+    } else {
+      startPhases();
+    }
   };
   /* The universe starts on the visitor's first interaction (near-instant in
      practice) or after 12s — this keeps the load trace visually settled so
