@@ -2,7 +2,9 @@
 
 Single-page marketing site for StockerTV's platform offering, aimed at banks, brokers, and trading platforms.
 
-**Live:** https://iddoetkin-eng.github.io/stockertv-b2b/
+**Live:** https://stockertv-b2b.vercel.app/ (Vercel, auto-deploys from main)
+
+Legacy mirror: https://iddoetkin-eng.github.io/stockertv-b2b/ (GitHub Pages)
 
 ## Stack
 
