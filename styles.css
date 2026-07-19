@@ -208,6 +208,20 @@ h3 { font-size: 1.5rem; line-height: 1.2; }
 }
 .wordmark span { color: var(--accent); font-style: italic; }
 
+.nav-right { display: flex; align-items: center; gap: 20px; }
+
+.nav-site {
+  display: none;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  padding: 6px 0;
+}
+.nav-site:hover { color: var(--ink); }
+@media (min-width: 480px) { .nav-site { display: inline-block; } }
+
 .nav-links { display: none; gap: 30px; }
 .nav-links a {
   font-size: 0.9375rem;

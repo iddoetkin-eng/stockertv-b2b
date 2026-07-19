@@ -114,9 +114,10 @@ var EMAIL = "iddo.etkin@gmail.com";
   var initHeroFx = function () {
     var canvas = document.getElementById("hero-fx");
     var hero = document.getElementById("hero");
-    if (!canvas || !hero || noAnim || reducedMotion || !gpuOk) return; // static glow + wave band remain
+    doc.setAttribute("data-fx", "init");
+    if (!canvas || !hero || noAnim || reducedMotion || !gpuOk) { doc.setAttribute("data-fx", "guard-skip"); return; } // static glow + wave band remain
     var gl = canvas.getContext("webgl", { alpha: true, antialias: false, powerPreference: "high-performance" });
-    if (!gl) return;
+    if (!gl) { doc.setAttribute("data-fx", "no-gl"); return; }
 
     var isMobile = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 720;
     var N = isMobile ? 30000 : 110000;
@@ -133,35 +134,35 @@ var EMAIL = "iddo.etkin@gmail.com";
       "varying float vL;\n" +
       "void main() {\n" +
       "  vec3 pA = aA;\n" +
-      "  float wv = sin(pA.x * 3.4 + uT * 0.60 + pA.z * 3.0) * 0.50\n" +
-      "           + sin(pA.x * 6.8 - uT * 0.42 + pA.z * 5.2) * 0.26\n" +
-      "           + sin(pA.x * 12.0 + uT * 0.30 + pA.z * 8.4) * 0.13;\n" +
-      "  pA.y += wv * 0.34;\n" +
+      "  float wv = sin(pA.x * 3.4 + uT * 1.15 + aA.y * 5.0) * 0.50\n" +
+      "           + sin(pA.x * 6.8 - uT * 0.85 + aA.y * 9.0) * 0.26\n" +
+      "           + sin(pA.x * 12.0 + uT * 0.60 + aA.y * 14.0) * 0.13;\n" +
+      "  pA.y += wv * 0.16;\n" +
       "  vec3 pB = aB;\n" +
       "  float cr = cos(uRotY), sr = sin(uRotY);\n" +
       "  pB = vec3(pB.x * cr + pB.z * sr, pB.y, -pB.x * sr + pB.z * cr) * uScaleB;\n" +
       "  vec3 pC = aC * uScaleC;\n" +
       "  pC.y -= 0.56;\n" +
-      "  pC.xy += vec2(sin(uT * 0.7 + aSeed * 6.28), cos(uT * 0.55 + aSeed * 6.28)) * 0.004;\n" +
+      "  pC.xy += vec2(sin(uT * 1.4 + aSeed * 6.28), cos(uT * 1.1 + aSeed * 6.28)) * 0.005;\n" +
       "  vec2 c = pA.xy * uW.x + vec2(pB.x * uIA, pB.y) * uW.y + vec2(pC.x * uIA, pC.y) * uW.z;\n" +
       "  float z = pA.z * uW.x + pB.z * uW.y + pC.z * uW.z;\n" +
       "  float focus = max(max(uW.x, uW.y), uW.z);\n" +
       "  float scat = 1.0 - focus;\n" +
-      "  c += vec2(sin(aSeed * 81.0 + uT * 1.6), cos(aSeed * 47.0 + uT * 1.2)) * scat * 0.34;\n" +
-      "  z += sin(aSeed * 23.0 - uT * 1.4) * scat * 0.3;\n" +
+      "  c += vec2(sin(aSeed * 81.0 + uT * 2.6), cos(aSeed * 47.0 + uT * 2.1)) * scat * 0.55;\n" +
+      "  z += sin(aSeed * 23.0 - uT * 2.3) * scat * 0.3;\n" +
       "  float per = 1.0 / (1.0 + z * 0.45);\n" +
       "  c *= per;\n" +
       "  c.y += uScroll * z * 0.55;\n" +
       "  vec2 dm = c - uMouse;\n" +
       "  float d2 = dot(dm, dm) + 0.012;\n" +
-      "  float f = min(uMouseF * 0.030 / d2, 0.28);\n" +
+      "  float f = min(uMouseF * 0.058 / d2, 0.5);\n" +
       "  c += (dm / sqrt(d2)) * f;\n" +
       "  gl_Position = vec4(c, 0.0, 1.0);\n" +
-      "  gl_PointSize = (0.9 + 1.3 * fract(aSeed * 7.13)) * per * uPx * uDpr;\n" +
+      "  gl_PointSize = (0.9 + 1.3 * fract(aSeed * 7.13)) * per * uPx * uDpr * (1.0 + uW.x * 1.1);\n" +
       "  float lum = 0.075 + 0.8 * pow(fract(aSeed * 3.77), 3.0);\n" +
       "  lum *= (0.55 + 0.45 * per);\n" +
-      "  lum *= 1.0 + max(0.0, wv) * 0.9 * uW.x;\n" +
-      "  lum *= dot(uW, vec3(1.0, 1.0, 0.55)) + scat * 1.1;\n" +
+      "  lum *= 1.0 + max(0.0, wv) * 1.6 * uW.x;\n" +
+      "  lum *= dot(uW, vec3(1.65, 1.0, 0.55)) + scat * 1.1;\n" +
       "  vL = lum;\n" +
       "}";
     var FS =
@@ -207,8 +208,11 @@ var EMAIL = "iddo.etkin@gmail.com";
       A = new Float32Array(N * 3);
       seeds = new Float32Array(N);
       for (var i = 0; i < N; i++) {
-        A[i * 3] = (Math.random() * 2 - 1) * 1.12;
-        A[i * 3 + 1] = (Math.random() * 2 - 1) * 0.07;
+        A[i * 3] = (Math.random() * 2 - 1) * 1.15;
+        /* discrete lanes spanning the full viewport height — particles in a
+           lane share a wave phase, so coherent threads stay visible */
+        A[i * 3 + 1] = (Math.floor(Math.random() * 20) / 19 - 0.5) * 1.72 +
+          (Math.random() - 0.5) * 0.025;
         A[i * 3 + 2] = Math.random() * 1.2 - 0.6;
         seeds[i] = Math.random();
       }
@@ -274,6 +278,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE);
       gl.clearColor(0, 0, 0, 0);
+      doc.setAttribute("data-fx", "start");
       startFx();
     });
 
@@ -293,10 +298,10 @@ var EMAIL = "iddo.etkin@gmail.com";
     resize();
     window.addEventListener("resize", resize);
     gl.uniform1f(U.uDpr, dpr);
-    gl.uniform1f(U.uPx, isMobile ? 2.0 : 1.8);
+    gl.uniform1f(U.uPx, isMobile ? 2.2 : 2.0);
 
-    /* morph timeline: waveform → globe → wordmark */
-    var HOLD = 6.5, MORPH = 2.6, SEG = HOLD + MORPH;
+    /* morph timeline: waveform → globe → wordmark (~12.6s full cycle) */
+    var HOLD = 2.9, MORPH = 1.3, SEG = HOLD + MORPH;
     var weights = function (t) {
       var ct = t % (SEG * 3);
       var seg = Math.floor(ct / SEG);
@@ -341,12 +346,17 @@ var EMAIL = "iddo.etkin@gmail.com";
         running = false;
         return;
       }
-      /* adaptive quality: shed load if the device can't keep up */
-      if (lastT) {
+      /* adaptive quality: shed load only on SUSTAINED slowness — recovers
+         on good frames so one-off hiccups never degrade the effect */
+      if (lastT && frames > 12) {
         var dt = now - lastT;
-        if (dt > 34 && ++slowFrames > 40) {
-          if (drawN > N * 0.35) { drawN = Math.floor(N * 0.35); slowFrames = 0; }
-          else { dead = true; canvas.style.opacity = "0"; running = false; return; }
+        if (dt > 40) {
+          if (++slowFrames > 70) {
+            if (drawN > N * 0.35) { drawN = Math.floor(N * 0.35); slowFrames = 0; }
+            else { dead = true; doc.setAttribute("data-fx", "dead"); canvas.style.opacity = "0"; running = false; return; }
+          }
+        } else if (slowFrames > 0) {
+          slowFrames -= 2;
         }
       }
       lastT = now;
@@ -354,14 +364,15 @@ var EMAIL = "iddo.etkin@gmail.com";
 
       var t = (now - born) / 1000;
       var w = weights(t);
-      mForce += (((performance.now() - lastMove < 2600) ? 1 : 0) - mForce) * 0.05;
-      mx += (tmx - mx) * 0.08;
-      my += (tmy - my) * 0.08;
+      mForce += (((performance.now() - lastMove < 2600) ? 1 : 0) - mForce) * 0.1;
+      mx += (tmx - mx) * 0.16;
+      my += (tmy - my) * 0.16;
 
+      if (frames === 20) doc.setAttribute("data-fx", "running-" + drawN);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform1f(U.uT, t);
       gl.uniform3f(U.uW, w[0], w[1], w[2]);
-      gl.uniform1f(U.uRotY, t * 0.22);
+      gl.uniform1f(U.uRotY, t * 0.45);
       gl.uniform1f(U.uScroll, Math.min(1, window.scrollY / Math.max(1, hero.offsetHeight)) * 1.2);
       gl.uniform2f(U.uMouse, mx, my);
       gl.uniform1f(U.uMouseF, mForce);
@@ -411,6 +422,8 @@ var EMAIL = "iddo.etkin@gmail.com";
     window.addEventListener(t, kickHeroFx, { passive: true });
   });
   setTimeout(kickHeroFx, 12000);
+  /* the ?fxt test hook implies "start now" */
+  if (new URLSearchParams(location.search).has("fxt")) kickHeroFx();
 
   /* ---------- lazy video posters (keep them off the critical path) ---------- */
   var lazyVids = document.querySelectorAll("video[data-poster]");
