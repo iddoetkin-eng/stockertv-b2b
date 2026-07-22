@@ -199,7 +199,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       "attribute vec3 aB;\n" +
       "attribute vec3 aC;\n" +
       "attribute float aSeed;\n" +
-      "uniform float uT, uIA, uScaleB, uScaleC, uRotY, uScroll, uMouseF, uDpr, uPx, uSettle;\n" +
+      "uniform float uT, uIA, uScaleB, uScaleC, uRotY, uScroll, uMouseF, uDpr, uPx, uSettle, uHalfH;\n" +
       "uniform vec3 uW;\n" +
       "uniform vec2 uMouse;\n" +
       "varying float vL;\n" +
@@ -213,7 +213,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  float cr = cos(uRotY), sr = sin(uRotY);\n" +
       "  pB = vec3(pB.x * cr + pB.z * sr, pB.y, -pB.x * sr + pB.z * cr) * uScaleB;\n" +
       "  vec3 pC = aC * uScaleC;\n" +
-      "  pC.y -= 0.56;\n" +
+      "  pC.y -= 0.46;\n" +
       "  pC.xy += vec2(sin(uT * 1.4 + aSeed * 6.28), cos(uT * 1.1 + aSeed * 6.28)) * 0.003 * (1.0 - uSettle);\n" +
       "  vec2 c = pA.xy * uW.x + vec2(pB.x * uIA, pB.y) * uW.y + vec2(pC.x * uIA, pC.y) * uW.z;\n" +
       "  float z = pA.z * uW.x + pB.z * uW.y + pC.z * uW.z;\n" +
@@ -224,17 +224,20 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  float per = 1.0 / (1.0 + z * 0.45);\n" +
       "  c *= per;\n" +
       "  c.y += uScroll * z * 0.55;\n" +
-      "  vec2 dm = c - uMouse;\n" +
-      "  float d2 = dot(dm, dm) + 0.012;\n" +
-      "  float f = min(uMouseF * 0.058 / d2, 0.5) * (1.0 - uSettle * 0.75);\n" +
-      "  c += (dm / sqrt(d2)) * f;\n" +
+      /* pointer: small local ripple only — hard 75px screen radius,
+         max ~5px displacement, quadratic falloff, zero outside */
+      "  vec2 dmpx = vec2((c.x - uMouse.x) * uHalfH / uIA, (c.y - uMouse.y) * uHalfH);\n" +
+      "  float dpx = length(dmpx) + 0.001;\n" +
+      "  float tq = clamp(1.0 - dpx / 75.0, 0.0, 1.0);\n" +
+      "  float ampPx = uMouseF * 5.0 * tq * tq * (1.0 - uSettle * 0.75);\n" +
+      "  c += (dmpx / dpx) * ampPx * vec2(uIA / uHalfH, 1.0 / uHalfH);\n" +
       "  gl_Position = vec4(c, 0.0, 1.0);\n" +
       "  gl_PointSize = (0.9 + 1.3 * fract(aSeed * 7.13)) * per * uPx * uDpr * (1.0 + uW.x * 1.1);\n" +
       "  float lum = 0.075 + 0.8 * pow(fract(aSeed * 3.77), 3.0);\n" +
       "  lum *= (0.55 + 0.45 * per);\n" +
       "  lum *= 1.0 + max(0.0, wv) * 1.6 * uW.x;\n" +
       "  lum *= dot(uW, vec3(1.65, 1.0, 0.55)) + scat * 1.1;\n" +
-      "  lum *= 1.0 - uSettle * 0.85;\n" +
+      "  lum *= 1.0 - uSettle * uW.z;\n" +
       "  vL = lum;\n" +
       "}";
     var FS =
@@ -324,7 +327,7 @@ var EMAIL = "iddo.etkin@gmail.com";
         }
       }
       if (!px.length) px = [700, 170];
-      var HW = 0.68;
+      var HW = 0.82;
       for (var k = 0; k < N; k++) {
         var pi = (Math.floor(Math.random() * (px.length / 2))) * 2;
         C[k * 3] = ((px[pi] + Math.random() * 1.2) / 1400 - 0.5) * 2 * HW;
@@ -346,7 +349,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       bindAttr("aB", B, 3);
       bindAttr("aC", C, 3);
       bindAttr("aSeed", seeds, 1);
-      ["uT", "uIA", "uScaleB", "uScaleC", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uSettle"]
+      ["uT", "uIA", "uScaleB", "uScaleC", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uSettle", "uHalfH"]
         .forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE);
@@ -365,14 +368,15 @@ var EMAIL = "iddo.etkin@gmail.com";
       gl.viewport(0, 0, canvas.width, canvas.height);
       IA = r.height / r.width;
       gl.uniform1f(U.uIA, IA);
+      gl.uniform1f(U.uHalfH, r.height / 2);
       gl.uniform1f(U.uScaleB, Math.min(1, 0.85 / (0.62 * IA)));
-      var scaleC = Math.min(1, 0.95 / (0.68 * IA));
+      var scaleC = Math.min(1, 0.95 / (0.82 * IA));
       gl.uniform1f(U.uScaleC, scaleC);
       /* size the sharp wordmark to land exactly on the particle glyphs:
          the 1400px raster maps to 2*HW square units, so font px scales
          with hero height by HW * scaleC * 240/1400 */
       if (wordmarkEl) {
-        wordmarkEl.style.fontSize = (0.68 * scaleC * r.height * 240 / 1400).toFixed(1) + "px";
+        wordmarkEl.style.fontSize = (0.82 * scaleC * r.height * 240 / 1400).toFixed(1) + "px";
       }
     };
     resize();
@@ -409,8 +413,13 @@ var EMAIL = "iddo.etkin@gmail.com";
       lastMove = performance.now();
     }, { passive: true });
 
-    /* ?fxt=N jumps the morph clock N seconds in — used for visual testing */
-    var fxt = parseFloat(new URLSearchParams(location.search).get("fxt")) || 0;
+    /* ?fxt=N jumps the morph clock N seconds in — used for visual testing.
+       ?fxmouse=cx,cy rests a simulated pointer (fractions of the hero);
+       ?fxsweep=1 sweeps it — both drive the real pointer variables. */
+    var fxParams = new URLSearchParams(location.search);
+    var fxt = parseFloat(fxParams.get("fxt")) || 0;
+    var fxMouse = (fxParams.get("fxmouse") || "").split(",").map(parseFloat);
+    var fxSweep = fxParams.has("fxsweep");
     var born = performance.now() - fxt * 1000;
     var running = false;
     var heroVisible = true;
@@ -446,6 +455,15 @@ var EMAIL = "iddo.etkin@gmail.com";
 
       var t = (now - born) / 1000;
       var w = weights(t);
+      if (fxSweep) {
+        tmx = Math.sin(t * 2.2) * 0.85;
+        tmy = 0.1;
+        lastMove = performance.now();
+      } else if (fxMouse.length === 2 && !isNaN(fxMouse[0])) {
+        tmx = fxMouse[0] * 2 - 1;
+        tmy = -(fxMouse[1] * 2 - 1);
+        lastMove = performance.now();
+      }
       mForce += (((performance.now() - lastMove < 2600) ? 1 : 0) - mForce) * 0.1;
       mx += (tmx - mx) * 0.16;
       my += (tmy - my) * 0.16;

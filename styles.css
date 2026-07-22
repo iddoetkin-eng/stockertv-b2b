@@ -352,7 +352,7 @@ h3 { font-size: 1.5rem; line-height: 1.2; }
 .hero-wordmark {
   position: absolute;
   left: 50%;
-  top: 78%;
+  top: 73%;
   transform: translate(-50%, -50%);
   z-index: 2;
   font-family: var(--serif);
@@ -360,9 +360,6 @@ h3 { font-size: 1.5rem; line-height: 1.2; }
   line-height: 1;
   white-space: nowrap;
   color: #ffffff;
-  text-shadow:
-    0 0 16px rgba(222, 222, 222, 0.4),
-    0 0 44px rgba(222, 222, 222, 0.18);
   opacity: 0;
   pointer-events: none;
 }
