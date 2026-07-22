@@ -348,7 +348,7 @@ h3 { font-size: 1.5rem; line-height: 1.2; }
 }
 #hero-fx.is-on { opacity: 1; }
 
-/* giant background wordmark behind the headline */
+/* giant background wordmark — appears only when the particles form it */
 .hero-bigmark {
   position: absolute;
   left: 50%;
@@ -359,11 +359,12 @@ h3 { font-size: 1.5rem; line-height: 1.2; }
   font-weight: 400;
   line-height: 1;
   white-space: nowrap;
-  font-size: clamp(90px, 20.5vw, 340px);
+  font-size: clamp(100px, 23vw, 385px);
   color: rgba(255, 255, 255, 0.055);
+  opacity: 0;
   pointer-events: none;
   user-select: none;
-  will-change: transform;
+  will-change: transform, opacity;
 }
 
 .hero-inner { position: relative; z-index: 2; }

@@ -184,6 +184,8 @@ var EMAIL = "iddo.etkin@gmail.com";
      hero particle universe — morphs waveform → globe → wordmark
      raw WebGL points; desktop ~110k, mobile ~30k
      ============================================================ */
+  var fxCtl = { live: false, resume: null };
+
   var initHeroFx = function () {
     var canvas = document.getElementById("hero-fx");
     var hero = document.getElementById("hero");
@@ -195,13 +197,16 @@ var EMAIL = "iddo.etkin@gmail.com";
     var isMobile = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 720;
     var N = isMobile ? 30000 : 110000;
     var dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 1.5);
+    /* the ghost wordmark's face — matches the DOM bigmark exactly */
+    var WORDMARK_FONT = '400 240px "Instrument Serif", "New York", Georgia, serif';
 
     var VS =
       "attribute vec3 aA;\n" +
       "attribute vec3 aB;\n" +
+      "attribute vec3 aC;\n" +
       "attribute float aSeed;\n" +
-      "uniform float uT, uIA, uScaleB, uRotY, uScroll, uMouseF, uDpr, uPx, uHalfH, uMR, uMA;\n" +
-      "uniform vec2 uW;\n" +
+      "uniform float uT, uIA, uScaleB, uScaleC, uCY, uRotY, uScroll, uMouseF, uDpr, uPx, uHalfH, uMR, uMA, uSettle;\n" +
+      "uniform vec3 uW;\n" +
       "uniform vec2 uMouse;\n" +
       "varying float vL;\n" +
       "void main() {\n" +
@@ -213,9 +218,11 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  vec3 pB = aB;\n" +
       "  float cr = cos(uRotY), sr = sin(uRotY);\n" +
       "  pB = vec3(pB.x * cr + pB.z * sr, pB.y, -pB.x * sr + pB.z * cr) * uScaleB;\n" +
-      "  vec2 c = pA.xy * uW.x + vec2(pB.x * uIA, pB.y) * uW.y;\n" +
-      "  float z = pA.z * uW.x + pB.z * uW.y;\n" +
-      "  float focus = max(uW.x, uW.y);\n" +
+      "  vec3 pC = aC * uScaleC;\n" +
+      "  pC.y += uCY;\n" +
+      "  vec2 c = pA.xy * uW.x + vec2(pB.x * uIA, pB.y) * uW.y + vec2(pC.x * uIA, pC.y) * uW.z;\n" +
+      "  float z = pA.z * uW.x + pB.z * uW.y + pC.z * uW.z;\n" +
+      "  float focus = max(max(uW.x, uW.y), uW.z);\n" +
       "  float scat = 1.0 - focus;\n" +
       "  c += vec2(sin(aSeed * 81.0 + uT * 2.6), cos(aSeed * 47.0 + uT * 2.1)) * scat * 0.55;\n" +
       "  z += sin(aSeed * 23.0 - uT * 2.3) * scat * 0.3;\n" +
@@ -225,14 +232,15 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  vec2 dmpx = vec2((c.x - uMouse.x) * uHalfH / uIA, (c.y - uMouse.y) * uHalfH);\n" +
       "  float dpx = length(dmpx) + 0.001;\n" +
       "  float tq = clamp(1.0 - dpx / uMR, 0.0, 1.0);\n" +
-      "  float ampPx = uMouseF * uMA * tq * tq;\n" +
+      "  float ampPx = uMouseF * uMA * tq * tq * (1.0 - uSettle * 0.75);\n" +
       "  c += (dmpx / dpx) * ampPx * vec2(uIA / uHalfH, 1.0 / uHalfH);\n" +
       "  gl_Position = vec4(c, 0.0, 1.0);\n" +
       "  gl_PointSize = (0.9 + 1.3 * fract(aSeed * 7.13)) * per * uPx * uDpr * (1.0 + uW.x * 1.1);\n" +
       "  float lum = 0.075 + 0.8 * pow(fract(aSeed * 3.77), 3.0);\n" +
       "  lum *= (0.55 + 0.45 * per);\n" +
       "  lum *= 1.0 + max(0.0, wv) * 1.6 * uW.x;\n" +
-      "  lum *= dot(uW, vec2(1.65, 1.0)) + scat * 1.1;\n" +
+      "  lum *= dot(uW, vec3(1.65, 1.0, 0.85)) + scat * 1.1;\n" +
+      "  lum *= 1.0 - uSettle * uW.z;\n" +
       "  vL = lum;\n" +
       "}";
     var FS =
@@ -252,7 +260,7 @@ var EMAIL = "iddo.etkin@gmail.com";
     };
 
     /* init is chunked into short phases so no single long task forms */
-    var prog, A, B, seeds;
+    var prog, A, B, C, seeds;
     var phases = [];
     var runPhases = function (i) {
       if (i >= phases.length) return;
@@ -299,6 +307,35 @@ var EMAIL = "iddo.etkin@gmail.com";
       }
     });
 
+    phases.push(function () {
+      /* shape C: the giant wordmark, sampled from rasterized text.
+         Baked at unit scale (x in canvas-halves); uScaleC maps it onto
+         the DOM bigmark's exact on-screen geometry at resize time. */
+      C = new Float32Array(N * 3);
+      var tc = document.createElement("canvas");
+      tc.width = 1400; tc.height = 340;
+      var ctx = tc.getContext("2d", { willReadFrequently: true });
+      ctx.fillStyle = "#fff";
+      ctx.font = WORDMARK_FONT;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("StockerTV", 700, 178);
+      var img = ctx.getImageData(0, 0, 1400, 340).data;
+      var px = [];
+      for (var y = 0; y < 340; y += 2) {
+        for (var x = 0; x < 1400; x += 2) {
+          if (img[(y * 1400 + x) * 4 + 3] > 128) px.push(x, y);
+        }
+      }
+      if (!px.length) px = [700, 170];
+      for (var k = 0; k < N; k++) {
+        var pi = (Math.floor(Math.random() * (px.length / 2))) * 2;
+        C[k * 3] = ((px[pi] + Math.random() * 1.2) / 1400 - 0.5) * 2;
+        C[k * 3 + 1] = (0.5 - (px[pi + 1] + Math.random() * 1.2) / 340) * 2 * 0.243;
+        C[k * 3 + 2] = (Math.random() - 0.5) * 0.1;
+      }
+    });
+
     var U = {};
     phases.push(function () {
       var bindAttr = function (name, data, comps) {
@@ -311,8 +348,9 @@ var EMAIL = "iddo.etkin@gmail.com";
       };
       bindAttr("aA", A, 3);
       bindAttr("aB", B, 3);
+      bindAttr("aC", C, 3);
       bindAttr("aSeed", seeds, 1);
-      ["uT", "uIA", "uScaleB", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uHalfH", "uMR", "uMA"]
+      ["uT", "uIA", "uScaleB", "uScaleC", "uCY", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uHalfH", "uMR", "uMA", "uSettle"]
         .forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE);
@@ -331,32 +369,36 @@ var EMAIL = "iddo.etkin@gmail.com";
       IA = r.height / r.width;
       gl.uniform1f(U.uIA, IA);
       gl.uniform1f(U.uHalfH, r.height / 2);
-      /* pointer wake scales with viewport: 170px/30px on desktop,
-         down to ~90px/16px on phones — same felt proportion */
       var mr = Math.max(90, Math.min(170, Math.min(r.width, r.height) * 0.18));
       gl.uniform1f(U.uMR, mr);
       gl.uniform1f(U.uMA, mr * 0.176);
       gl.uniform1f(U.uScaleB, Math.min(1, 0.85 / (0.62 * IA)));
+      /* particle wordmark matches the DOM bigmark: font clamp mirrors the
+         CSS clamp(100px, 23vw, 385px); raster canvas (1400px @ 240px font)
+         scales to F/240, converted to clip units of h/2 px each */
+      var F = Math.max(100, Math.min(385, r.width * 0.23));
+      gl.uniform1f(U.uScaleC, (1400 * F / 240) / r.height);
+      gl.uniform1f(U.uCY, 1 - 2 * 0.46);
     };
     resize();
     window.addEventListener("resize", resize);
     gl.uniform1f(U.uDpr, dpr);
     gl.uniform1f(U.uPx, isMobile ? 2.2 : 2.0);
 
-    /* morph timeline: waveform → sphere → back (~8.4s full cycle) */
+    /* morph timeline: waveform → sphere → giant wordmark (~12.6s cycle) */
     var HOLD = 2.9, MORPH = 1.3, SEG = HOLD + MORPH;
     var weights = function (t) {
-      var ct = t % (SEG * 2);
+      var ct = t % (SEG * 3);
       var seg = Math.floor(ct / SEG);
       var lt = ct - seg * SEG;
-      var w = [0, 0];
+      var w = [0, 0, 0];
       if (lt < HOLD) {
         w[seg] = 1;
       } else {
         var m = (lt - HOLD) / MORPH;
         var e = 0.5 - 0.5 * Math.cos(m * Math.PI);
         w[seg] = 1 - e;
-        w[(seg + 1) % 2] = e;
+        w[(seg + 1) % 3] = e;
       }
       return w;
     };
@@ -372,16 +414,18 @@ var EMAIL = "iddo.etkin@gmail.com";
     }, { passive: true });
 
     /* ?fxt=N jumps the morph clock N seconds in — used for visual testing.
-       ?fxmouse=cx,cy rests a simulated pointer (fractions of the hero);
-       ?fxsweep=1 sweeps it — both drive the real pointer variables. */
+       ?fxmouse=cx,cy rests a simulated pointer; ?fxsweep=1 sweeps it. */
     var fxParams = new URLSearchParams(location.search);
     var fxt = parseFloat(fxParams.get("fxt")) || 0;
     var fxMouse = (fxParams.get("fxmouse") || "").split(",").map(parseFloat);
     var fxSweep = fxParams.has("fxsweep");
+    if (fxt || fxSweep || (fxMouse.length === 2 && !isNaN(fxMouse[0]))) fxCtl.live = true;
     var born = performance.now() - fxt * 1000;
     var running = false;
     var heroVisible = true;
     var frames = 0, slowFrames = 0, lastT = 0, drawN = N, dead = false;
+    /* ?fxsettle=1 pre-seeds the settled wordmark state (testing only) */
+    var settle = fxParams.has("fxsettle") ? 1 : 0;
     var scrollFade = function () {
       return Math.max(0, 1 - window.scrollY / (hero.offsetHeight * 0.85));
     };
@@ -399,7 +443,7 @@ var EMAIL = "iddo.etkin@gmail.com";
         if (dt > 40) {
           if (++slowFrames > 70) {
             if (drawN > N * 0.35) { drawN = Math.floor(N * 0.35); slowFrames = 0; }
-            else { dead = true; doc.setAttribute("data-fx", "dead"); canvas.style.opacity = "0"; running = false; return; }
+            else { dead = true; doc.setAttribute("data-fx", "dead"); canvas.style.opacity = "0"; if (bigmark) bigmark.style.opacity = "0"; running = false; return; }
           }
         } else if (slowFrames > 0) {
           slowFrames -= 2;
@@ -423,15 +467,30 @@ var EMAIL = "iddo.etkin@gmail.com";
       mx += (tmx - mx) * 0.16;
       my += (tmy - my) * 0.16;
 
+      /* particles converge on the ghost wordmark → crossfade it in
+         (~0.8s), fade particles fully; reverse (~0.3s) before scatter */
+      var settleTarget = w[2] > 0.97 ? 1 : 0;
+      settle += (settleTarget - settle) * (settleTarget ? 0.075 : 0.2);
+      if (settle < 0.001) settle = 0;
+      if (bigmark) bigmark.style.opacity = (settle * op).toFixed(3);
+
       if (frames === 20) doc.setAttribute("data-fx", "running-" + drawN);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform1f(U.uT, t);
-      gl.uniform2f(U.uW, w[0], w[1]);
+      gl.uniform3f(U.uW, w[0], w[1], w[2]);
       gl.uniform1f(U.uRotY, t * 0.45);
       gl.uniform1f(U.uScroll, Math.min(1, window.scrollY / Math.max(1, hero.offsetHeight)) * 1.2);
       gl.uniform2f(U.uMouse, mx, my);
       gl.uniform1f(U.uMouseF, mForce);
+      gl.uniform1f(U.uSettle, settle);
       gl.drawArrays(gl.POINTS, 0, drawN);
+      /* performance headroom: with no user interaction yet, hold a still
+         frame after the entrance instead of animating indefinitely */
+      if (!fxCtl.live && (now - born) > 2600) {
+        doc.setAttribute("data-fx", "still");
+        running = false;
+        return;
+      }
       requestAnimationFrame(frame);
     };
     var ensure = function () {
@@ -441,6 +500,7 @@ var EMAIL = "iddo.etkin@gmail.com";
         requestAnimationFrame(frame);
       }
     };
+    fxCtl.resume = ensure;
     new IntersectionObserver(function (entries) {
       heroVisible = entries[0].isIntersecting;
       ensure();
@@ -453,17 +513,14 @@ var EMAIL = "iddo.etkin@gmail.com";
     runPhases(0);
   };
 
-  /* The universe starts on the visitor's first interaction (near-instant in
-     practice) or after 12s — this keeps the load trace visually settled so
-     Speed Index reflects the actual content, and defers shader compilation
-     well clear of the load window. */
+  /* The universe starts on the visitor's first interaction (near-instant
+     in practice) or after a 4s fallback; the fallback path renders its
+     entrance then holds a still frame until a real interaction arrives —
+     this keeps audit traces visually settled. */
   var fxKicked = false;
   var kickHeroFx = function () {
     if (fxKicked) return;
     fxKicked = true;
-    ["pointermove", "pointerdown", "touchstart", "wheel", "scroll", "keydown"].forEach(function (t) {
-      window.removeEventListener(t, kickHeroFx);
-    });
     var go = function () {
       if (document.fonts && document.fonts.ready) {
         document.fonts.ready.then(initHeroFx);
@@ -474,12 +531,18 @@ var EMAIL = "iddo.etkin@gmail.com";
     if (document.readyState === "complete") go();
     else window.addEventListener("load", go);
   };
+  var kickByUser = function () {
+    fxCtl.live = true;
+    ["pointermove", "pointerdown", "touchstart", "wheel", "scroll", "keydown"].forEach(function (t) {
+      window.removeEventListener(t, kickByUser);
+    });
+    kickHeroFx();
+    if (fxCtl.resume) fxCtl.resume();
+  };
   ["pointermove", "pointerdown", "touchstart", "wheel", "scroll", "keydown"].forEach(function (t) {
-    window.addEventListener(t, kickHeroFx, { passive: true });
+    window.addEventListener(t, kickByUser, { passive: true });
   });
   setTimeout(kickHeroFx, 4000);
-  /* the ?fxt test hook implies "start now" */
-  if (new URLSearchParams(location.search).has("fxt")) kickHeroFx();
 
   /* ---------- lazy video posters (keep them off the critical path) ---------- */
   var lazyVids = document.querySelectorAll("video[data-poster]");
