@@ -199,7 +199,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       "attribute vec3 aB;\n" +
       "attribute vec3 aC;\n" +
       "attribute float aSeed;\n" +
-      "uniform float uT, uIA, uScaleB, uScaleC, uRotY, uScroll, uMouseF, uDpr, uPx, uSettle, uHalfH, uCY;\n" +
+      "uniform float uT, uIA, uScaleB, uScaleC, uRotY, uScroll, uMouseF, uDpr, uPx, uSettle, uHalfH, uCY, uMR, uMA;\n" +
       "uniform vec3 uW;\n" +
       "uniform vec2 uMouse;\n" +
       "varying float vL;\n" +
@@ -224,12 +224,13 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  float per = 1.0 / (1.0 + z * 0.45);\n" +
       "  c *= per;\n" +
       "  c.y += uScroll * z * 0.55;\n" +
-      /* pointer: small local ripple only — hard 75px screen radius,
-         max ~5px displacement, quadratic falloff, zero outside */
+      /* pointer: a clearly visible but local wake — radius/amplitude come
+         in as uniforms (desktop ~170px/30px, scaled down on small
+         viewports), quadratic falloff, zero outside the radius */
       "  vec2 dmpx = vec2((c.x - uMouse.x) * uHalfH / uIA, (c.y - uMouse.y) * uHalfH);\n" +
       "  float dpx = length(dmpx) + 0.001;\n" +
-      "  float tq = clamp(1.0 - dpx / 75.0, 0.0, 1.0);\n" +
-      "  float ampPx = uMouseF * 5.0 * tq * tq * (1.0 - uSettle * 0.75);\n" +
+      "  float tq = clamp(1.0 - dpx / uMR, 0.0, 1.0);\n" +
+      "  float ampPx = uMouseF * uMA * tq * tq * (1.0 - uSettle * 0.75);\n" +
       "  c += (dmpx / dpx) * ampPx * vec2(uIA / uHalfH, 1.0 / uHalfH);\n" +
       "  gl_Position = vec4(c, 0.0, 1.0);\n" +
       "  gl_PointSize = (0.9 + 1.3 * fract(aSeed * 7.13)) * per * uPx * uDpr * (1.0 + uW.x * 1.1);\n" +
@@ -349,7 +350,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       bindAttr("aB", B, 3);
       bindAttr("aC", C, 3);
       bindAttr("aSeed", seeds, 1);
-      ["uT", "uIA", "uScaleB", "uScaleC", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uSettle", "uHalfH", "uCY"]
+      ["uT", "uIA", "uScaleB", "uScaleC", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uSettle", "uHalfH", "uCY", "uMR", "uMA"]
         .forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE);
@@ -369,6 +370,11 @@ var EMAIL = "iddo.etkin@gmail.com";
       IA = r.height / r.width;
       gl.uniform1f(U.uIA, IA);
       gl.uniform1f(U.uHalfH, r.height / 2);
+      /* pointer wake scales with viewport: 170px/30px on desktop,
+         down to ~90px/16px on phones — same felt proportion */
+      var mr = Math.max(90, Math.min(170, Math.min(r.width, r.height) * 0.18));
+      gl.uniform1f(U.uMR, mr);
+      gl.uniform1f(U.uMA, mr * 0.176);
       gl.uniform1f(U.uScaleB, Math.min(1, 0.85 / (0.62 * IA)));
       /* wordmark geometry: as large as fits (+20% target) in the band
          between the CTA row (+30px gap) and the hero bottom — shrinks to
@@ -420,7 +426,6 @@ var EMAIL = "iddo.etkin@gmail.com";
     /* mouse */
     var mx = 0, my = 0, tmx = 0, tmy = 0, mForce = 0, lastMove = -1e4;
     window.addEventListener("pointermove", function (e) {
-      if (e.pointerType !== "mouse") return;
       var r = canvas.getBoundingClientRect();
       if (e.clientY < r.top || e.clientY > r.bottom) return;
       tmx = ((e.clientX - r.left) / r.width) * 2 - 1;
