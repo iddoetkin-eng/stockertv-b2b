@@ -190,15 +190,16 @@ var EMAIL = "iddo.etkin@gmail.com";
     var isMobile = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 720;
     var N = isMobile ? 30000 : 110000;
     var dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 1.5);
-    /* elegant serif wordmark — same face as the site headlines */
-    var WORDMARK_FONT = '700 240px "Instrument Serif", "New York", Georgia, serif';
+    /* elegant serif wordmark — same face and weight as the site headlines */
+    var WORDMARK_FONT = '400 240px "Instrument Serif", "New York", Georgia, serif';
+    var wordmarkEl = document.getElementById("hero-wordmark");
 
     var VS =
       "attribute vec3 aA;\n" +
       "attribute vec3 aB;\n" +
       "attribute vec3 aC;\n" +
       "attribute float aSeed;\n" +
-      "uniform float uT, uIA, uScaleB, uScaleC, uRotY, uScroll, uMouseF, uDpr, uPx;\n" +
+      "uniform float uT, uIA, uScaleB, uScaleC, uRotY, uScroll, uMouseF, uDpr, uPx, uSettle;\n" +
       "uniform vec3 uW;\n" +
       "uniform vec2 uMouse;\n" +
       "varying float vL;\n" +
@@ -213,7 +214,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  pB = vec3(pB.x * cr + pB.z * sr, pB.y, -pB.x * sr + pB.z * cr) * uScaleB;\n" +
       "  vec3 pC = aC * uScaleC;\n" +
       "  pC.y -= 0.56;\n" +
-      "  pC.xy += vec2(sin(uT * 1.4 + aSeed * 6.28), cos(uT * 1.1 + aSeed * 6.28)) * 0.003;\n" +
+      "  pC.xy += vec2(sin(uT * 1.4 + aSeed * 6.28), cos(uT * 1.1 + aSeed * 6.28)) * 0.003 * (1.0 - uSettle);\n" +
       "  vec2 c = pA.xy * uW.x + vec2(pB.x * uIA, pB.y) * uW.y + vec2(pC.x * uIA, pC.y) * uW.z;\n" +
       "  float z = pA.z * uW.x + pB.z * uW.y + pC.z * uW.z;\n" +
       "  float focus = max(max(uW.x, uW.y), uW.z);\n" +
@@ -225,7 +226,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  c.y += uScroll * z * 0.55;\n" +
       "  vec2 dm = c - uMouse;\n" +
       "  float d2 = dot(dm, dm) + 0.012;\n" +
-      "  float f = min(uMouseF * 0.058 / d2, 0.5);\n" +
+      "  float f = min(uMouseF * 0.058 / d2, 0.5) * (1.0 - uSettle * 0.75);\n" +
       "  c += (dm / sqrt(d2)) * f;\n" +
       "  gl_Position = vec4(c, 0.0, 1.0);\n" +
       "  gl_PointSize = (0.9 + 1.3 * fract(aSeed * 7.13)) * per * uPx * uDpr * (1.0 + uW.x * 1.1);\n" +
@@ -233,6 +234,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  lum *= (0.55 + 0.45 * per);\n" +
       "  lum *= 1.0 + max(0.0, wv) * 1.6 * uW.x;\n" +
       "  lum *= dot(uW, vec3(1.65, 1.0, 0.55)) + scat * 1.1;\n" +
+      "  lum *= 1.0 - uSettle * 0.85;\n" +
       "  vL = lum;\n" +
       "}";
     var FS =
@@ -344,7 +346,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       bindAttr("aB", B, 3);
       bindAttr("aC", C, 3);
       bindAttr("aSeed", seeds, 1);
-      ["uT", "uIA", "uScaleB", "uScaleC", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse"]
+      ["uT", "uIA", "uScaleB", "uScaleC", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uSettle"]
         .forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE);
@@ -364,7 +366,14 @@ var EMAIL = "iddo.etkin@gmail.com";
       IA = r.height / r.width;
       gl.uniform1f(U.uIA, IA);
       gl.uniform1f(U.uScaleB, Math.min(1, 0.85 / (0.62 * IA)));
-      gl.uniform1f(U.uScaleC, Math.min(1, 0.95 / (0.68 * IA)));
+      var scaleC = Math.min(1, 0.95 / (0.68 * IA));
+      gl.uniform1f(U.uScaleC, scaleC);
+      /* size the sharp wordmark to land exactly on the particle glyphs:
+         the 1400px raster maps to 2*HW square units, so font px scales
+         with hero height by HW * scaleC * 240/1400 */
+      if (wordmarkEl) {
+        wordmarkEl.style.fontSize = (0.68 * scaleC * r.height * 240 / 1400).toFixed(1) + "px";
+      }
     };
     resize();
     window.addEventListener("resize", resize);
@@ -406,6 +415,8 @@ var EMAIL = "iddo.etkin@gmail.com";
     var running = false;
     var heroVisible = true;
     var frames = 0, slowFrames = 0, lastT = 0, drawN = N, dead = false;
+    /* ?fxsettle=1 pre-seeds the settled wordmark state (testing only) */
+    var settle = new URLSearchParams(location.search).has("fxsettle") ? 1 : 0;
     var scrollFade = function () {
       return Math.max(0, 1 - window.scrollY / (hero.offsetHeight * 0.85));
     };
@@ -424,7 +435,7 @@ var EMAIL = "iddo.etkin@gmail.com";
         if (dt > 40) {
           if (++slowFrames > 70) {
             if (drawN > N * 0.35) { drawN = Math.floor(N * 0.35); slowFrames = 0; }
-            else { dead = true; doc.setAttribute("data-fx", "dead"); canvas.style.opacity = "0"; running = false; return; }
+            else { dead = true; doc.setAttribute("data-fx", "dead"); canvas.style.opacity = "0"; if (wordmarkEl) wordmarkEl.style.opacity = "0"; running = false; return; }
           }
         } else if (slowFrames > 0) {
           slowFrames -= 2;
@@ -439,6 +450,13 @@ var EMAIL = "iddo.etkin@gmail.com";
       mx += (tmx - mx) * 0.16;
       my += (tmy - my) * 0.16;
 
+      /* particles converge → crossfade to the sharp wordmark (~0.8s in,
+         ~0.3s back out before the scatter) */
+      var settleTarget = w[2] > 0.97 ? 1 : 0;
+      settle += (settleTarget - settle) * (settleTarget ? 0.075 : 0.2);
+      if (settle < 0.001) settle = 0;
+      if (wordmarkEl) wordmarkEl.style.opacity = (settle * op).toFixed(3);
+
       if (frames === 20) doc.setAttribute("data-fx", "running-" + drawN);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform1f(U.uT, t);
@@ -447,6 +465,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       gl.uniform1f(U.uScroll, Math.min(1, window.scrollY / Math.max(1, hero.offsetHeight)) * 1.2);
       gl.uniform2f(U.uMouse, mx, my);
       gl.uniform1f(U.uMouseF, mForce);
+      gl.uniform1f(U.uSettle, settle);
       gl.drawArrays(gl.POINTS, 0, drawN);
       requestAnimationFrame(frame);
     };
