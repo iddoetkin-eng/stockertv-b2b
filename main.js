@@ -591,6 +591,7 @@ var EMAIL = "iddo.etkin@gmail.com";
 
     var COMPANIES = [
       { t: "NVDA", n: "Nvidia", x: "NYSE / NASDAQ", v: "nvda" },
+      { t: "LLY", n: "Eli Lilly", x: "NYSE / NASDAQ", v: "lly" },
       { t: "AAPL", n: "Apple", x: "NYSE / NASDAQ" },
       { t: "MSFT", n: "Microsoft", x: "NYSE / NASDAQ" },
       { t: "TSLA", n: "Tesla", x: "NYSE / NASDAQ" },

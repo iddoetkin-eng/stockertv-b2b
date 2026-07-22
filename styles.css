@@ -898,6 +898,21 @@ h3 { font-size: 1.5rem; line-height: 1.2; }
 .reporter-list li span:not(.rep-dot) { color: var(--ink-2); font-size: 0.9375rem; }
 .product-copy .fine { margin-top: 28px; }
 
+/* ---------- the shift (problem section) ---------- */
+
+.shift-grid { display: grid; gap: 40px; align-items: center; }
+.shift-grid .video-card { max-width: none; margin: 0; }
+
+@media (min-width: 900px) {
+  .shift-grid { grid-template-columns: 1fr 1.1fr; gap: 64px; }
+}
+
+/* ---------- product multilingual proof ---------- */
+
+.product-video { margin-top: 28px; }
+.product-video .video-card { max-width: none; margin: 0; }
+.product-video .fine { margin-top: 10px; }
+
 /* ---------- explainer video ---------- */
 
 .section-slim { padding: 72px 0; }
