@@ -199,7 +199,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       "attribute vec3 aB;\n" +
       "attribute vec3 aC;\n" +
       "attribute float aSeed;\n" +
-      "uniform float uT, uIA, uScaleB, uScaleC, uRotY, uScroll, uMouseF, uDpr, uPx, uSettle, uHalfH;\n" +
+      "uniform float uT, uIA, uScaleB, uScaleC, uRotY, uScroll, uMouseF, uDpr, uPx, uSettle, uHalfH, uCY;\n" +
       "uniform vec3 uW;\n" +
       "uniform vec2 uMouse;\n" +
       "varying float vL;\n" +
@@ -213,7 +213,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  float cr = cos(uRotY), sr = sin(uRotY);\n" +
       "  pB = vec3(pB.x * cr + pB.z * sr, pB.y, -pB.x * sr + pB.z * cr) * uScaleB;\n" +
       "  vec3 pC = aC * uScaleC;\n" +
-      "  pC.y -= 0.46;\n" +
+      "  pC.y += uCY;\n" +
       "  pC.xy += vec2(sin(uT * 1.4 + aSeed * 6.28), cos(uT * 1.1 + aSeed * 6.28)) * 0.003 * (1.0 - uSettle);\n" +
       "  vec2 c = pA.xy * uW.x + vec2(pB.x * uIA, pB.y) * uW.y + vec2(pC.x * uIA, pC.y) * uW.z;\n" +
       "  float z = pA.z * uW.x + pB.z * uW.y + pC.z * uW.z;\n" +
@@ -349,7 +349,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       bindAttr("aB", B, 3);
       bindAttr("aC", C, 3);
       bindAttr("aSeed", seeds, 1);
-      ["uT", "uIA", "uScaleB", "uScaleC", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uSettle", "uHalfH"]
+      ["uT", "uIA", "uScaleB", "uScaleC", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uSettle", "uHalfH", "uCY"]
         .forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE);
@@ -370,13 +370,28 @@ var EMAIL = "iddo.etkin@gmail.com";
       gl.uniform1f(U.uIA, IA);
       gl.uniform1f(U.uHalfH, r.height / 2);
       gl.uniform1f(U.uScaleB, Math.min(1, 0.85 / (0.62 * IA)));
+      /* wordmark geometry: as large as fits (+20% target) in the band
+         between the CTA row (+30px gap) and the hero bottom — shrinks to
+         fit on short viewports so it never overlaps or clips. Particle
+         targets and DOM text share scaleC/centerFrac so they stay aligned. */
       var scaleC = Math.min(1, 0.95 / (0.82 * IA));
+      var bandTop = 0.82;
+      var ctaRow = hero.querySelector(".cta-row");
+      if (ctaRow) {
+        bandTop = (ctaRow.getBoundingClientRect().bottom - r.top + 30) / r.height;
+      }
+      var avail = 0.98 - bandTop;
+      var halfFrac = (0.82 * 0.243 * scaleC) / 2;
+      if (avail > 0 && 2 * halfFrac > avail) {
+        scaleC *= avail / (2 * halfFrac);
+        halfFrac = (0.82 * 0.243 * scaleC) / 2;
+      }
+      var centerFrac = bandTop + halfFrac;
       gl.uniform1f(U.uScaleC, scaleC);
-      /* size the sharp wordmark to land exactly on the particle glyphs:
-         the 1400px raster maps to 2*HW square units, so font px scales
-         with hero height by HW * scaleC * 240/1400 */
+      gl.uniform1f(U.uCY, 1 - 2 * centerFrac);
       if (wordmarkEl) {
         wordmarkEl.style.fontSize = (0.82 * scaleC * r.height * 240 / 1400).toFixed(1) + "px";
+        wordmarkEl.style.top = (centerFrac * 100).toFixed(2) + "%";
       }
     };
     resize();
