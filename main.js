@@ -49,10 +49,15 @@ var EMAIL = "iddo.etkin@gmail.com";
     return exchangesPromise;
   };
 
-  /* ---------- sticky nav border ---------- */
+  /* ---------- sticky nav border + hero bigmark parallax ---------- */
   var nav = document.querySelector(".nav");
+  var bigmark = document.getElementById("hero-bigmark");
   var onScroll = function () {
-    nav.classList.toggle("scrolled", window.scrollY > 8);
+    var y = window.scrollY;
+    nav.classList.toggle("scrolled", y > 8);
+    if (bigmark && !reducedMotion && !noAnim && y < 1400) {
+      bigmark.style.transform = "translate(-50%, calc(-50% + " + (y * 0.22).toFixed(1) + "px))";
+    }
   };
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
@@ -190,17 +195,13 @@ var EMAIL = "iddo.etkin@gmail.com";
     var isMobile = window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 720;
     var N = isMobile ? 30000 : 110000;
     var dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 1.5);
-    /* elegant serif wordmark — same face and weight as the site headlines */
-    var WORDMARK_FONT = '400 240px "Instrument Serif", "New York", Georgia, serif';
-    var wordmarkEl = document.getElementById("hero-wordmark");
 
     var VS =
       "attribute vec3 aA;\n" +
       "attribute vec3 aB;\n" +
-      "attribute vec3 aC;\n" +
       "attribute float aSeed;\n" +
-      "uniform float uT, uIA, uScaleB, uScaleC, uRotY, uScroll, uMouseF, uDpr, uPx, uSettle, uHalfH, uCY, uMR, uMA;\n" +
-      "uniform vec3 uW;\n" +
+      "uniform float uT, uIA, uScaleB, uRotY, uScroll, uMouseF, uDpr, uPx, uHalfH, uMR, uMA;\n" +
+      "uniform vec2 uW;\n" +
       "uniform vec2 uMouse;\n" +
       "varying float vL;\n" +
       "void main() {\n" +
@@ -212,33 +213,26 @@ var EMAIL = "iddo.etkin@gmail.com";
       "  vec3 pB = aB;\n" +
       "  float cr = cos(uRotY), sr = sin(uRotY);\n" +
       "  pB = vec3(pB.x * cr + pB.z * sr, pB.y, -pB.x * sr + pB.z * cr) * uScaleB;\n" +
-      "  vec3 pC = aC * uScaleC;\n" +
-      "  pC.y += uCY;\n" +
-      "  pC.xy += vec2(sin(uT * 1.4 + aSeed * 6.28), cos(uT * 1.1 + aSeed * 6.28)) * 0.003 * (1.0 - uSettle);\n" +
-      "  vec2 c = pA.xy * uW.x + vec2(pB.x * uIA, pB.y) * uW.y + vec2(pC.x * uIA, pC.y) * uW.z;\n" +
-      "  float z = pA.z * uW.x + pB.z * uW.y + pC.z * uW.z;\n" +
-      "  float focus = max(max(uW.x, uW.y), uW.z);\n" +
+      "  vec2 c = pA.xy * uW.x + vec2(pB.x * uIA, pB.y) * uW.y;\n" +
+      "  float z = pA.z * uW.x + pB.z * uW.y;\n" +
+      "  float focus = max(uW.x, uW.y);\n" +
       "  float scat = 1.0 - focus;\n" +
       "  c += vec2(sin(aSeed * 81.0 + uT * 2.6), cos(aSeed * 47.0 + uT * 2.1)) * scat * 0.55;\n" +
       "  z += sin(aSeed * 23.0 - uT * 2.3) * scat * 0.3;\n" +
       "  float per = 1.0 / (1.0 + z * 0.45);\n" +
       "  c *= per;\n" +
       "  c.y += uScroll * z * 0.55;\n" +
-      /* pointer: a clearly visible but local wake — radius/amplitude come
-         in as uniforms (desktop ~170px/30px, scaled down on small
-         viewports), quadratic falloff, zero outside the radius */
       "  vec2 dmpx = vec2((c.x - uMouse.x) * uHalfH / uIA, (c.y - uMouse.y) * uHalfH);\n" +
       "  float dpx = length(dmpx) + 0.001;\n" +
       "  float tq = clamp(1.0 - dpx / uMR, 0.0, 1.0);\n" +
-      "  float ampPx = uMouseF * uMA * tq * tq * (1.0 - uSettle * 0.75);\n" +
+      "  float ampPx = uMouseF * uMA * tq * tq;\n" +
       "  c += (dmpx / dpx) * ampPx * vec2(uIA / uHalfH, 1.0 / uHalfH);\n" +
       "  gl_Position = vec4(c, 0.0, 1.0);\n" +
       "  gl_PointSize = (0.9 + 1.3 * fract(aSeed * 7.13)) * per * uPx * uDpr * (1.0 + uW.x * 1.1);\n" +
       "  float lum = 0.075 + 0.8 * pow(fract(aSeed * 3.77), 3.0);\n" +
       "  lum *= (0.55 + 0.45 * per);\n" +
       "  lum *= 1.0 + max(0.0, wv) * 1.6 * uW.x;\n" +
-      "  lum *= dot(uW, vec3(1.65, 1.0, 0.55)) + scat * 1.1;\n" +
-      "  lum *= 1.0 - uSettle * uW.z;\n" +
+      "  lum *= dot(uW, vec2(1.65, 1.0)) + scat * 1.1;\n" +
       "  vL = lum;\n" +
       "}";
     var FS =
@@ -257,9 +251,8 @@ var EMAIL = "iddo.etkin@gmail.com";
       return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
     };
 
-    /* init is chunked into short phases so no single long task forms
-       (protects TBT on throttled mobile CPUs) */
-    var prog, A, B, C, seeds;
+    /* init is chunked into short phases so no single long task forms */
+    var prog, A, B, seeds;
     var phases = [];
     var runPhases = function (i) {
       if (i >= phases.length) return;
@@ -280,13 +273,11 @@ var EMAIL = "iddo.etkin@gmail.com";
     });
 
     phases.push(function () {
-      /* shape A: waveform field (clip units; wave motion added in shader) */
+      /* shape A: waveform lanes (clip units; wave motion added in shader) */
       A = new Float32Array(N * 3);
       seeds = new Float32Array(N);
       for (var i = 0; i < N; i++) {
         A[i * 3] = (Math.random() * 2 - 1) * 1.15;
-        /* discrete lanes spanning the full viewport height — particles in a
-           lane share a wave phase, so coherent threads stay visible */
         A[i * 3 + 1] = (Math.floor(Math.random() * 20) / 19 - 0.5) * 1.72 +
           (Math.random() - 0.5) * 0.025;
         A[i * 3 + 2] = Math.random() * 1.2 - 0.6;
@@ -308,35 +299,7 @@ var EMAIL = "iddo.etkin@gmail.com";
       }
     });
 
-    phases.push(function () {
-      /* shape C: the wordmark, sampled from rasterized text (square units).
-         The font is guaranteed loaded before phases start — see startPhases. */
-      C = new Float32Array(N * 3);
-      var tc = document.createElement("canvas");
-      tc.width = 1400; tc.height = 340;
-      var ctx = tc.getContext("2d", { willReadFrequently: true });
-      ctx.fillStyle = "#fff";
-      ctx.font = WORDMARK_FONT;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("StockerTV", 700, 178);
-      var img = ctx.getImageData(0, 0, 1400, 340).data;
-      var px = [];
-      for (var y = 0; y < 340; y += 2) {
-        for (var x = 0; x < 1400; x += 2) {
-          if (img[(y * 1400 + x) * 4 + 3] > 128) px.push(x, y);
-        }
-      }
-      if (!px.length) px = [700, 170];
-      var HW = 0.82;
-      for (var k = 0; k < N; k++) {
-        var pi = (Math.floor(Math.random() * (px.length / 2))) * 2;
-        C[k * 3] = ((px[pi] + Math.random() * 1.2) / 1400 - 0.5) * 2 * HW;
-        C[k * 3 + 1] = (0.5 - (px[pi + 1] + Math.random() * 1.2) / 340) * 2 * HW * 0.243;
-        C[k * 3 + 2] = (Math.random() - 0.5) * 0.1;
-      }
-    });
-
+    var U = {};
     phases.push(function () {
       var bindAttr = function (name, data, comps) {
         var b = gl.createBuffer();
@@ -348,9 +311,8 @@ var EMAIL = "iddo.etkin@gmail.com";
       };
       bindAttr("aA", A, 3);
       bindAttr("aB", B, 3);
-      bindAttr("aC", C, 3);
       bindAttr("aSeed", seeds, 1);
-      ["uT", "uIA", "uScaleB", "uScaleC", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uSettle", "uHalfH", "uCY", "uMR", "uMA"]
+      ["uT", "uIA", "uScaleB", "uRotY", "uScroll", "uMouseF", "uDpr", "uPx", "uW", "uMouse", "uHalfH", "uMR", "uMA"]
         .forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.ONE, gl.ONE);
@@ -359,7 +321,6 @@ var EMAIL = "iddo.etkin@gmail.com";
       startFx();
     });
 
-    var U = {};
     var startFx = function () {
     var IA = 1;
     var resize = function () {
@@ -376,49 +337,26 @@ var EMAIL = "iddo.etkin@gmail.com";
       gl.uniform1f(U.uMR, mr);
       gl.uniform1f(U.uMA, mr * 0.176);
       gl.uniform1f(U.uScaleB, Math.min(1, 0.85 / (0.62 * IA)));
-      /* wordmark geometry: as large as fits (+20% target) in the band
-         between the CTA row (+30px gap) and the hero bottom — shrinks to
-         fit on short viewports so it never overlaps or clips. Particle
-         targets and DOM text share scaleC/centerFrac so they stay aligned. */
-      var scaleC = Math.min(1, 0.95 / (0.82 * IA));
-      var bandTop = 0.82;
-      var ctaRow = hero.querySelector(".cta-row");
-      if (ctaRow) {
-        bandTop = (ctaRow.getBoundingClientRect().bottom - r.top + 30) / r.height;
-      }
-      var avail = 0.98 - bandTop;
-      var halfFrac = (0.82 * 0.243 * scaleC) / 2;
-      if (avail > 0 && 2 * halfFrac > avail) {
-        scaleC *= avail / (2 * halfFrac);
-        halfFrac = (0.82 * 0.243 * scaleC) / 2;
-      }
-      var centerFrac = bandTop + halfFrac;
-      gl.uniform1f(U.uScaleC, scaleC);
-      gl.uniform1f(U.uCY, 1 - 2 * centerFrac);
-      if (wordmarkEl) {
-        wordmarkEl.style.fontSize = (0.82 * scaleC * r.height * 240 / 1400).toFixed(1) + "px";
-        wordmarkEl.style.top = (centerFrac * 100).toFixed(2) + "%";
-      }
     };
     resize();
     window.addEventListener("resize", resize);
     gl.uniform1f(U.uDpr, dpr);
     gl.uniform1f(U.uPx, isMobile ? 2.2 : 2.0);
 
-    /* morph timeline: waveform → globe → wordmark (~12.6s full cycle) */
+    /* morph timeline: waveform → sphere → back (~8.4s full cycle) */
     var HOLD = 2.9, MORPH = 1.3, SEG = HOLD + MORPH;
     var weights = function (t) {
-      var ct = t % (SEG * 3);
+      var ct = t % (SEG * 2);
       var seg = Math.floor(ct / SEG);
       var lt = ct - seg * SEG;
-      var w = [0, 0, 0];
+      var w = [0, 0];
       if (lt < HOLD) {
         w[seg] = 1;
       } else {
         var m = (lt - HOLD) / MORPH;
         var e = 0.5 - 0.5 * Math.cos(m * Math.PI);
         w[seg] = 1 - e;
-        w[(seg + 1) % 3] = e;
+        w[(seg + 1) % 2] = e;
       }
       return w;
     };
@@ -444,8 +382,6 @@ var EMAIL = "iddo.etkin@gmail.com";
     var running = false;
     var heroVisible = true;
     var frames = 0, slowFrames = 0, lastT = 0, drawN = N, dead = false;
-    /* ?fxsettle=1 pre-seeds the settled wordmark state (testing only) */
-    var settle = new URLSearchParams(location.search).has("fxsettle") ? 1 : 0;
     var scrollFade = function () {
       return Math.max(0, 1 - window.scrollY / (hero.offsetHeight * 0.85));
     };
@@ -457,14 +393,13 @@ var EMAIL = "iddo.etkin@gmail.com";
         running = false;
         return;
       }
-      /* adaptive quality: shed load only on SUSTAINED slowness — recovers
-         on good frames so one-off hiccups never degrade the effect */
+      /* adaptive quality: shed load only on SUSTAINED slowness */
       if (lastT && frames > 12) {
         var dt = now - lastT;
         if (dt > 40) {
           if (++slowFrames > 70) {
             if (drawN > N * 0.35) { drawN = Math.floor(N * 0.35); slowFrames = 0; }
-            else { dead = true; doc.setAttribute("data-fx", "dead"); canvas.style.opacity = "0"; if (wordmarkEl) wordmarkEl.style.opacity = "0"; running = false; return; }
+            else { dead = true; doc.setAttribute("data-fx", "dead"); canvas.style.opacity = "0"; running = false; return; }
           }
         } else if (slowFrames > 0) {
           slowFrames -= 2;
@@ -488,22 +423,14 @@ var EMAIL = "iddo.etkin@gmail.com";
       mx += (tmx - mx) * 0.16;
       my += (tmy - my) * 0.16;
 
-      /* particles converge → crossfade to the sharp wordmark (~0.8s in,
-         ~0.3s back out before the scatter) */
-      var settleTarget = w[2] > 0.97 ? 1 : 0;
-      settle += (settleTarget - settle) * (settleTarget ? 0.075 : 0.2);
-      if (settle < 0.001) settle = 0;
-      if (wordmarkEl) wordmarkEl.style.opacity = (settle * op).toFixed(3);
-
       if (frames === 20) doc.setAttribute("data-fx", "running-" + drawN);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform1f(U.uT, t);
-      gl.uniform3f(U.uW, w[0], w[1], w[2]);
+      gl.uniform2f(U.uW, w[0], w[1]);
       gl.uniform1f(U.uRotY, t * 0.45);
       gl.uniform1f(U.uScroll, Math.min(1, window.scrollY / Math.max(1, hero.offsetHeight)) * 1.2);
       gl.uniform2f(U.uMouse, mx, my);
       gl.uniform1f(U.uMouseF, mForce);
-      gl.uniform1f(U.uSettle, settle);
       gl.drawArrays(gl.POINTS, 0, drawN);
       requestAnimationFrame(frame);
     };
@@ -523,15 +450,9 @@ var EMAIL = "iddo.etkin@gmail.com";
     ensure();
     };
 
-    /* make sure the serif face is actually loaded before the wordmark is
-       rasterized — never sample with a fallback font */
-    var startPhases = function () { runPhases(0); };
-    if (document.fonts && document.fonts.load) {
-      document.fonts.load(WORDMARK_FONT, "StockerTV").then(startPhases, startPhases);
-    } else {
-      startPhases();
-    }
+    runPhases(0);
   };
+
   /* The universe starts on the visitor's first interaction (near-instant in
      practice) or after 12s — this keeps the load trace visually settled so
      Speed Index reflects the actual content, and defers shader compilation
