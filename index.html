@@ -40,9 +40,24 @@
       <div class="nav-right">
         <a class="nav-site" href="https://www.stockertv.com" target="_blank" rel="noopener">stockertv.com</a>
         <a class="btn btn-primary btn-sm" href="mailto:iddo.etkin@gmail.com?subject=StockerTV%20demo%20request" data-mailto="StockerTV demo request">Book a demo</a>
+        <button type="button" class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu"><span></span><span></span></button>
       </div>
     </div>
+    <div class="mobile-menu" id="mobile-menu" hidden>
+      <nav aria-label="Sections">
+        <a href="#coverage">Coverage</a>
+        <a href="#product">Product</a>
+        <a href="#integration">Integration</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#compliance">Compliance</a>
+        <a class="mobile-menu-site" href="https://www.stockertv.com" target="_blank" rel="noopener">stockertv.com &#8599;</a>
+      </nav>
+    </div>
   </header>
+
+  <div class="sticky-cta" id="sticky-cta">
+    <a class="btn btn-primary" href="mailto:iddo.etkin@gmail.com?subject=StockerTV%20demo%20request" data-mailto="StockerTV demo request">Book a demo</a>
+  </div>
 
   <main>
 
@@ -275,7 +290,7 @@
               <span class="w-brand">powered by <strong>StockerTV</strong></span>
             </div>
             <div class="w-grid">
-              <article class="w-card" tabindex="0">
+              <article class="w-card reveal reveal-cascade" tabindex="0">
                 <div class="w-thumb w-thumb-1">
                   <svg viewBox="0 0 200 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0,70 L20,64 L40,68 L60,52 L80,58 L100,42 L120,48 L140,32 L160,38 L180,22 L200,26" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2"/></svg>
                   <span class="w-play" aria-hidden="true"><svg width="11" height="13" viewBox="0 0 11 13"><path d="M0 0 L11 6.5 L0 13 Z" fill="currentColor"/></svg></span>
@@ -287,7 +302,7 @@
                   <span class="w-sub">Earnings · 2h ago</span>
                 </div>
               </article>
-              <article class="w-card" tabindex="0">
+              <article class="w-card reveal reveal-cascade" style="--d:.08s" tabindex="0">
                 <div class="w-thumb w-thumb-2">
                   <svg viewBox="0 0 200 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0,40 L20,46 L40,42 L60,54 L80,48 L100,58 L120,52 L140,60 L160,54 L180,62 L200,58" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2"/></svg>
                   <span class="w-play" aria-hidden="true"><svg width="11" height="13" viewBox="0 0 11 13"><path d="M0 0 L11 6.5 L0 13 Z" fill="currentColor"/></svg></span>
@@ -299,7 +314,7 @@
                   <span class="w-sub">Earnings · 4h ago</span>
                 </div>
               </article>
-              <article class="w-card" tabindex="0">
+              <article class="w-card reveal reveal-cascade" style="--d:.16s" tabindex="0">
                 <div class="w-thumb w-thumb-3">
                   <svg viewBox="0 0 200 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0,60 L20,52 L40,58 L60,44 L80,50 L100,36 L120,44 L140,30 L160,38 L180,26 L200,32" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2"/></svg>
                   <span class="w-play" aria-hidden="true"><svg width="11" height="13" viewBox="0 0 11 13"><path d="M0 0 L11 6.5 L0 13 Z" fill="currentColor"/></svg></span>
@@ -334,7 +349,7 @@
         <div class="pipe" id="pipe">
           <svg class="pipe-line" aria-hidden="true" preserveAspectRatio="none" viewBox="0 0 1000 2"><path id="pipe-path" d="M0,1 L1000,1" stroke="var(--accent)" stroke-width="2" fill="none"/></svg>
           <ol class="pipe-steps">
-            <li class="pipe-card reveal">
+            <li class="pipe-card reveal reveal-cascade">
               <span class="pipe-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="13" cy="13" r="2" fill="currentColor" stroke="none"/><path d="M13 4 A9 9 0 0 1 22 13"/><path d="M13 8 A5 5 0 0 1 18 13"/><path d="M4.5 18 A9 9 0 0 1 4 13 A9 9 0 0 1 6.6 6.6"/><path d="M13 13 L19.5 6.5"/></svg>
               </span>
@@ -342,7 +357,7 @@
               <h3>Detect</h3>
               <p>AI scans global news across all 32,981 companies, around the clock.</p>
             </li>
-            <li class="pipe-card reveal" style="--d:.08s">
+            <li class="pipe-card reveal reveal-cascade" style="--d:.08s">
               <span class="pipe-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 4.5 L21.5 9.5 L9.5 21.5 L4 22 L4.5 16.5 Z"/><path d="M14 7 L19 12"/><path d="M4 22 L7.5 18.5"/></svg>
               </span>
@@ -350,7 +365,7 @@
               <h3>Write</h3>
               <p>Specialized AI reporters draft the script with full company context.</p>
             </li>
-            <li class="pipe-card reveal" style="--d:.16s">
+            <li class="pipe-card reveal reveal-cascade" style="--d:.16s">
               <span class="pipe-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2.5 L21.5 5.5 V12 C21.5 17.5 18 21.5 13 23.5 C8 21.5 4.5 17.5 4.5 12 V5.5 Z"/><path d="M9 12.5 L12 15.5 L17.5 10"/></svg>
               </span>
@@ -358,7 +373,7 @@
               <h3>Verify</h3>
               <p>Fact-check plus a three-layer compliance engine on every script.</p>
             </li>
-            <li class="pipe-card reveal" style="--d:.24s">
+            <li class="pipe-card reveal reveal-cascade" style="--d:.24s">
               <span class="pipe-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="20" height="13" rx="2.5"/><path d="M11 9 L15.5 11.5 L11 14 Z" fill="currentColor" stroke="none"/><path d="M9 22 H17"/></svg>
               </span>
@@ -409,17 +424,38 @@
       </div>
     </section>
 
-    <!-- ============ 7. PROOF STRIP ============ -->
+    <!-- ============ 6b. MID-PAGE CTA ============ -->
+    <section class="section section-slim midcta">
+      <div class="container">
+        <h2 class="reveal midcta-h">See the pipeline run on <em>your</em> companies.</h2>
+        <div class="cta-row center reveal" style="--d:.08s">
+          <a class="btn btn-primary" href="mailto:iddo.etkin@gmail.com?subject=StockerTV%20demo%20request" data-mailto="StockerTV demo request">Book a demo</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7. PROOF STAT BAND ============ -->
     <section class="proof">
       <div class="container">
-        <div class="proof-row reveal">
-          <span><strong>500+</strong> videos already produced</span>
-          <span class="proof-sep" aria-hidden="true"></span>
-          <span>Live production system</span>
-          <span class="proof-sep" aria-hidden="true"></span>
-          <span>Multi-language from day one</span>
+        <div class="proof-stats">
+          <div class="stat reveal reveal-cascade">
+            <span class="stat-num" data-count="500" data-suffix="+">500+</span>
+            <span class="stat-label">videos already produced</span>
+          </div>
+          <div class="stat reveal reveal-cascade" style="--d:.08s">
+            <span class="stat-num" data-count="7">7</span>
+            <span class="stat-label">languages, live today</span>
+          </div>
+          <div class="stat reveal reveal-cascade" style="--d:.16s">
+            <span class="stat-num" data-count="53">53</span>
+            <span class="stat-label">exchanges covered</span>
+          </div>
+          <div class="stat reveal reveal-cascade" style="--d:.24s">
+            <span class="stat-num">24/7</span>
+            <span class="stat-label">production, unattended</span>
+          </div>
         </div>
-        <p class="proof-line reveal" style="--d:.1s">Automated financial video with a compliance engine built in — not bolted on.</p>
+        <p class="proof-line reveal" style="--d:.3s">Automated financial video with a compliance engine built in — not bolted on.</p>
       </div>
     </section>
 

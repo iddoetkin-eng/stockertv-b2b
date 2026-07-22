@@ -57,6 +57,74 @@ var EMAIL = "iddo.etkin@gmail.com";
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
+  /* ---------- mobile menu ---------- */
+  var burger = document.getElementById("nav-burger");
+  var mobileMenu = document.getElementById("mobile-menu");
+  if (burger && mobileMenu) {
+    var setMenu = function (open) {
+      burger.classList.toggle("is-open", open);
+      burger.setAttribute("aria-expanded", String(open));
+      mobileMenu.hidden = !open;
+      doc.classList.toggle("menu-open", open);
+    };
+    burger.addEventListener("click", function () {
+      setMenu(mobileMenu.hidden);
+    });
+    mobileMenu.querySelectorAll("a").forEach(function (a) {
+      a.addEventListener("click", function () { setMenu(false); });
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !mobileMenu.hidden) setMenu(false);
+    });
+  }
+
+  /* ---------- mobile sticky CTA (after 50% scroll, hidden near final CTA) ---------- */
+  var stickyCta = document.getElementById("sticky-cta");
+  if (stickyCta) {
+    var contactVisible = false;
+    var contact = document.getElementById("contact");
+    if (contact && "IntersectionObserver" in window) {
+      new IntersectionObserver(function (entries) {
+        contactVisible = entries[0].isIntersecting;
+        stickyScroll();
+      }, { threshold: 0 }).observe(contact);
+    }
+    var stickyScroll = function () {
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      var show = max > 0 && window.scrollY / max > 0.5 && !contactVisible;
+      stickyCta.classList.toggle("is-on", show);
+    };
+    window.addEventListener("scroll", stickyScroll, { passive: true });
+    stickyScroll();
+  }
+
+  /* ---------- stat count-up ---------- */
+  var counters = document.querySelectorAll(".stat-num[data-count]");
+  if (counters.length && "IntersectionObserver" in window && !noAnim && !reducedMotion) {
+    var runCount = function (el) {
+      var target = parseInt(el.getAttribute("data-count"), 10);
+      var suffix = el.getAttribute("data-suffix") || "";
+      var t0 = performance.now();
+      var dur = 1300;
+      var tick = function (now) {
+        var p = Math.min(1, (now - t0) / dur);
+        var eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased).toLocaleString("en-US") + suffix;
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+    var countObs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          runCount(en.target);
+          countObs.unobserve(en.target);
+        }
+      });
+    }, { threshold: 0.6 });
+    counters.forEach(function (el) { countObs.observe(el); });
+  }
+
   /* ---------- scroll reveals ---------- */
   var reveals = document.querySelectorAll(".reveal");
   if ("IntersectionObserver" in window && !noAnim) {
@@ -431,7 +499,7 @@ var EMAIL = "iddo.etkin@gmail.com";
   ["pointermove", "pointerdown", "touchstart", "wheel", "scroll", "keydown"].forEach(function (t) {
     window.addEventListener(t, kickHeroFx, { passive: true });
   });
-  setTimeout(kickHeroFx, 12000);
+  setTimeout(kickHeroFx, 4000);
   /* the ?fxt test hook implies "start now" */
   if (new URLSearchParams(location.search).has("fxt")) kickHeroFx();
 
