@@ -908,11 +908,11 @@ h3 { font-size: 1.5rem; line-height: 1.2; }
   .shift-grid { grid-template-columns: 1fr 1.1fr; gap: 64px; }
 }
 
-/* ---------- product multilingual proof ---------- */
+/* ---------- in-column proof video (coverage/multilingual) ---------- */
 
-.product-video { margin-top: 28px; }
-.product-video .video-card { max-width: none; margin: 0; }
-.product-video .fine { margin-top: 10px; }
+.side-video { margin-top: 32px; }
+.side-video .video-card { max-width: none; margin: 0; }
+.side-video .fine { margin-top: 10px; }
 
 /* ---------- explainer video ---------- */
 
